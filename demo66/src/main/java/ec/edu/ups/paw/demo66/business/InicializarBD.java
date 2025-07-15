@@ -153,7 +153,7 @@ public class InicializarBD {
         System.out.println("Persona y Pais");
         
         Pais pais = new Pais();
-        pais.setCodigo(593);
+        //pais.setCodigo(593);
         pais.setNombre("Ecuador");
         daopais.insert(pais);
         

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "citas-medicas-prointegrador",
+  "private_key_id": "e2a9328f5b4d9749102e4d03c42ea9fd28cf88a4",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDCEqBxRiUwG2tV\nIxIEGhkZ3RgFy8+Z6rnIMxeGQW9xmxElDSC3EzrDfM8QzPcZqn+7peebP58livKN\nkryoUDzNNWN5swql5Rjp4Qhy0y3gSfPJxV8r9+wQWiUd3UMCi+itltOweQ52HrJO\njLosGaIRdv3UQ3afp1CwFTGvTEdMceRcVi4mIpb4J9+RZCCZxrBSdK0rSbUqxefM\nbqPqaZIUFIXrvww5CVzBqdButnx+UsfYKTWW1mrQfKzKFy5HCGMW4eJIMcf22XFZ\neQAv9ENzayrQL1T51bgenw8j/YdcOQrSQA1ydODeaU5KFdGtxfdeVFR+hPjJ2I7k\nlsku/40RAgMBAAECggEADKR0fbSNVx8uJIdqlMhTcscfmb8PaM4s6JEFewo3tY2d\ntg1vIGX5CcOPZJ+JiEs+U23JEui32BT/XIAe2JMThuWvs32Zl7l/IDs31u0RW79N\niYsZOk7F+sG4kcO4agnNsEM3SpN0QPcac/oAZb+MunkHK4TyjQ9z9uiGik4cher3\nNa9t9MWWl8eb4ZUTuAtucY6DZRiRcLlwme0K3aZArB7/t0UH4xWhmgnehwJf3uVZ\nWY8eylE6VtvGedBKdEIh6g7mW2Jn72uHgpKnz4obqoDG4VENLw2h6a52I356k25P\nGxu6BLfuCd/yQNy+/rDKx/HC7oqsbyIpOq/R3ZZ70QKBgQD5RiMy/kBSipMFMoKB\nTD2uvm5MQZM4h5Xx0SUqyJpO4u1waSfKkxMxmAq4XHDvpQyjx4trKuidPHQ0lHxe\n77QrUY+IJCYM+9GULit3Ud3u/3HFFhKqVzbAxZopYojWTDs1NQc4ELaWARr5A3qU\nNSUEUg5Ib/4RppFmNoS37dOIaQKBgQDHTy+wiK12XuiB+QFqOkr1nb3a+jwsenqr\nzK/Ey3Rtm+C2HyvWSpc/+Ywcj5oH/3kBXc5x/m8ipYVHaJpUQ0A9VgKe15dhtIAj\n65EH37niL3/EnSspqXuayjkfJMN+p0WYAaQpMwjjCLh55SaDrXCD83YKXA2/aI9w\nOcxL55SKaQKBgDSQscODEhVV24LxD8wsQ6WhyqiR+3WkQd5oeCn5e3C/McrOofF5\n6kY/BaOy+q3OZEf1QFUtCzh9ExQza7apXZj07guLc+qw/5T713al8OMBQwCIkw8Q\nrR8hjEzF1o06LhIeSJNuEtK3EPUJ4sN2IYQzuYdU9oLKWUbwoDQZFs5hAoGBAJ/e\nTIp1l23TQvy+Fvx2NZo+JQN4pLuooq0bSgG4kHM7DUwIRMlmm1udd12RciPoL8+A\nxw943vwTeIyGwwPDzctlKkTu+WZNulsVoQeH1Towj3PN/ck1QQgwHRF2E7mLwq7i\n4iKJ5R7258IepH4KqK2uo4g7vmtCG4wRUGWyI9vBAoGALSGMWLmM9IeNziEn9Odb\nOOHF6q/XBzweXO0hfYqEEc/PyjfPUi46i27ffIWy6PGxv8G4FappvsBfaeImGAdh\nAdbmCVxHQ4foPbotcv/jbf6H2Yo6eJQJ3IhhEiYQiQZEorxqhCr5CKUGFORPlEtT\nbkoISAzMbKu8IOP1buktiEo=\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@citas-medicas-prointegrador.iam.gserviceaccount.com",
+  "client_id": "115323415427796611474",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40citas-medicas-prointegrador.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
