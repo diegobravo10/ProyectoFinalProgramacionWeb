@@ -1,6 +1,7 @@
 package ec.edu.ups.proyecto.citasmedicas;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class Usuario {
     private String cedula;
     private String direccion;
     private String correo;
-    private Date fechaNacimiento;
+    private LocalDate fechaNacimiento;
     private String rol;
     private String uid;
     
@@ -85,11 +86,11 @@ public class Usuario {
         this.correo = correo;
     }
 
-    public Date getFechaNacimiento() {
+    public LocalDate getFechaNacimiento() {
         return fechaNacimiento;
     }
 
-    public void setFechaNacimiento(Date fechaNacimiento) {
+    public void setFechaNacimiento(LocalDate fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
     }
 

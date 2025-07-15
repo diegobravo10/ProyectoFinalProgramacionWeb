@@ -54,7 +54,7 @@ public class InciarBD {
 		doc.setCorreo("brzoale2510@gmail.com");
 		doc.setDireccion("Jubones");
 		doc.setEspecialidad(esp);
-		doc.setRol("Doctor");
+		doc.setRol("doctor");
 		
 		daoDoctor.insert(doc); 
 		
@@ -65,7 +65,7 @@ public class InciarBD {
 		persona.setApellido("Toledo");
 		persona.setDireccion("jUBONES");
 		persona.setCorreo("diego@gmail.com");
-		persona.setRol("Admin");
+		persona.setRol("admin");
 		
 		daoPersona.insert(persona);
 		
