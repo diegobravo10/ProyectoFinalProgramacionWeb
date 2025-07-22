@@ -36,7 +36,7 @@ const Login = () => {
       }
 
       // Guardar info en localStorage si quieres
-      localStorage.setItem('uid', user.uid);
+      localStorage.setItem('cedula', user.uid);
       localStorage.setItem('email', user.email);
 
     } else {

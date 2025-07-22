@@ -1,9 +1,9 @@
 import React from 'react';
-import { getAuth, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { doc, getDoc} from "firebase/firestore";
-import { db } from "../servicios/firebase";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 import './Navbar.css';
 
 
@@ -26,33 +26,35 @@ const Navbar = () => {
   };
 
  useEffect(() => {
-  //Extraemos el id del paciente del localStorage
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      //Extraer los datos del paciente, a trave del id obtenido
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
-         
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
+  const auth = getAuth();
 
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const token = await user.getIdToken();
 
-          } else {
-            console.warn("No se encontró el usuario");
-          }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
+        const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("No se pudo obtener los datos del usuario");
         }
-      };
 
-      cargarDatos();
+        const data = await res.json();
+
+        setNombre(data.nombre || "");
+        setApellido(data.apellido || "");
+      } catch (error) {
+        console.error("Error al obtener datos del usuario:", error);
+      }
     }
-  }, []);
+  });
+
+  return () => unsubscribe();
+}, []);
 
 
   return (

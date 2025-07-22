@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './paciente.css';
 import { collection, getDocs, addDoc, query, where, onSnapshot} from "firebase/firestore";
-import { db } from "../servicios/firebase";
 import Swal from 'sweetalert2';
+import { auth, provider, db } from "../servicios/firebase.js";
+import { signInWithPopup } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
 
 const Paciente = () => {
@@ -21,27 +23,39 @@ const [shownAppointments, setShownAppointments] = useState(new Set());
 
 
 // Obtener el ID del paciente actual
-const currentPatientId = localStorage.getItem('uid'); 
+const currentPatientId = localStorage.getItem('cedula');
 
 useEffect(() => {
   const fetchData = async () => {
     try {
-      // Cargar especialidades
-      const specialtiesSnapshot = await getDocs(collection(db, "especialidad"));
-      const specialtiesList = specialtiesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setSpecialties(specialtiesList);
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
 
-      // Cargar doctores
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const doctorsList = usersSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(user => user.rol === 'doctor');
+      if (!token) {
+        console.error("No se pudo obtener el token.");
+        return;
+      }
+
+      const [especialidadesRes, doctoresRes] = await Promise.all([
+        fetch('http://localhost:8080/citasmedicas/citasmedicas/especialidades', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        }),
+        fetch('http://localhost:8080/citasmedicas/citasmedicas/doctor', {  
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+      ]);
+
+      if (!especialidadesRes.ok || !doctoresRes.ok) {
+        throw new Error("Error al obtener datos del backend.");
+      }
+
+      const specialtiesList = await especialidadesRes.json();
+      const doctorsList = await doctoresRes.json();
+
+      setSpecialties(specialtiesList);
       setDoctors(doctorsList);
     } catch (error) {
-      console.error("Error al obtener datos de Firebase:", error);
+      console.error("Error al obtener datos:", error);
     }
   };
 
@@ -49,82 +63,101 @@ useEffect(() => {
 }, []);
 
 
+
+
 useEffect(() => {
   if (doctors.length === 0) return;
-  //Obtenemos las citas medicas en base al id del paciente
-  const citasQuery = query(
-    collection(db, "citasmedicas"),
-    where("pacienteid", "==", currentPatientId)
-  );
-  const horariosMap = new Map();
-  let citasDocs = [];
 
-  const horariosUnsub = onSnapshot(collection(db, "horarios"), (snapshot) => {
-    snapshot.forEach((doc) => {
-      horariosMap.set(doc.id, { id: doc.id, ...doc.data() });
-    });
-    actualizarCitas();
-  });
-  //Carga de citas en tiempo real con onSnapshot
-  const citasUnsub = onSnapshot(citasQuery, (snapshot) => {
-    citasDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    actualizarCitas();
-  });
-  // Actualizar Citas, carga en la tabla con la funcionalidad de sweetalert2 
-  function actualizarCitas() {
-    const nuevasCitas = citasDocs.map(cita => ({
-      ...cita,
-      horarioInfo: horariosMap.get(cita.horarioid) || {}
-    }));
+  const fetchCitasAndHorarios = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user ? await user.getIdToken() : null;
 
-    nuevasCitas.forEach(cita => {
-      const doctorName = getDoctorName(cita.doctorid);
-      const fechaFormateada = cita.horarioInfo ? formatDate(cita.horarioInfo.fecha) : 'Fecha no disponible';
-      if (
-        (cita.estado === 'confirmado' || cita.estado === 'rechazado') &&
-        !shownAppointments.has(cita.id) &&
-        cita.horarioInfo &&
-        isDateFuture(cita.horarioInfo.fecha)
-      ) {
-        if (!doctorName || !cita.horarioInfo || !cita.horarioInfo.fecha) {
-          return;
-        }
-        //Alerta de confirmado y rechazado para mostrar a doctores. 
-        if (cita.estado === 'confirmado') {
-          Swal.fire({
-            icon: 'success',
-            title: '¡Cita Confirmada!',
-            html: `
-              <p><strong>Doctor:</strong> ${doctorName}</p>
-              <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-              <p>Gracias por confiar en nosotros. Si necesitas cambiar tu cita, contáctanos.</p>
-            `,
-            confirmButtonText: 'OK',
-          });
-        } else if (cita.estado === 'rechazado') {
-          Swal.fire({
-            icon: 'error',
-            title: 'Cita Rechazada',
-            html: `
-              <p>Lo sentimos, tu cita medica con ${doctorName} para el día ${fechaFormateada} ha sido rechazada.</p>
-              <p>Por favor, contacta con nosotros para reprogramar o para más información.</p>
-            `,
-            confirmButtonText: 'OK',
-          });
-        }
-
-        setShownAppointments(prev => new Set(prev).add(cita.id));
+      if (!token) {
+        console.error("No hay token");
+        return;
       }
-    });
 
-    setAppointments(nuevasCitas);
-  }
+      // Obtener citas médicas del paciente
+      const citasRes = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/paciente/${currentPatientId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
 
-  return () => {
-    horariosUnsub();
-    citasUnsub();
+      const citasData = await citasRes.json();
+
+      // Obtener todos los horarios
+      const horariosRes = await fetch('http://localhost:8080/citasmedicas/citasmedicas/horario', {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+
+      const horariosData = await horariosRes.json();
+
+      const horariosMap = new Map();
+      horariosData.forEach(horario => {
+        horariosMap.set(horario.id, horario);
+      });
+
+      // Armar citas con info del horario
+      const nuevasCitas = citasData.map(cita => ({
+        ...cita,
+        horarioInfo: horariosMap.get(cita.horarioid) || {}
+      }));
+
+      // Mostrar alertas si hay citas nuevas confirmadas o rechazadas
+      nuevasCitas.forEach(cita => {
+        const doctorName = getDoctorName(cita.doctorid);
+        const fechaFormateada = cita.horarioInfo ? formatDate(cita.horarioInfo.fecha) : 'Fecha no disponible';
+
+        if (
+          (cita.estado === 'confirmado' || cita.estado === 'rechazado') &&
+          !shownAppointments.has(cita.id) &&
+          cita.horarioInfo &&
+          isDateFuture(cita.horarioInfo.fecha)
+        ) {
+          if (!doctorName || !cita.horarioInfo || !cita.horarioInfo.fecha) {
+            return;
+          }
+
+          if (cita.estado === 'confirmado') {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Cita Confirmada!',
+              html: `
+                <p><strong>Doctor:</strong> ${doctorName}</p>
+                <p><strong>Fecha:</strong> ${fechaFormateada}</p>
+                <p>Gracias por confiar en nosotros. Si necesitas cambiar tu cita, contáctanos.</p>
+              `,
+              confirmButtonText: 'OK',
+            });
+          } else if (cita.estado === 'rechazado') {
+            Swal.fire({
+              icon: 'error',
+              title: 'Cita Rechazada',
+              html: `
+                <p>Lo sentimos, tu cita médica con ${doctorName} para el día ${fechaFormateada} ha sido rechazada.</p>
+                <p>Por favor, contacta con nosotros para reprogramar o para más información.</p>
+              `,
+              confirmButtonText: 'OK',
+            });
+          }
+
+          setShownAppointments(prev => new Set(prev).add(cita.id));
+        }
+      });
+
+      setAppointments(nuevasCitas);
+    } catch (error) {
+      console.error("Error al obtener citas y horarios:", error);
+    }
   };
-}, [doctors]); 
+
+  fetchCitasAndHorarios();
+}, [doctors]);
+
 
   useEffect(() => {
     const filtered = doctors.filter(doc => doc.especialidadid === appointment.specialtyId);
@@ -134,48 +167,36 @@ useEffect(() => {
   }, [appointment.specialtyId, doctors]);
 
   // Función para obtener horarios disponibles del doctor seleccionado
-  const fetchAvailableSchedules = async (doctorId) => {
-    if (!doctorId) {
-      setAvailableSchedules([]);
-      return;
-    }
+const fetchAvailableSchedules = async (doctorId) => {
+  if (!doctorId) {
+    setAvailableSchedules([]);
+    return;
+  }
 
-    try {
-      // Obtener todos los horarios disponibles (disponibilidad = true) para el doctor
-      const horariosQuery = query(
-        collection(db, "horarios"),
-        where("doctorid", "==", doctorId),
-        where("disponibilidad", "==", true)
-      );
-      const horariosSnapshot = await getDocs(horariosQuery);
+  try {
+    const user = auth.currentUser;
+    const token = user && await user.getIdToken();
 
-      // Obtener horarios ya ocupados
-      const citasQuery = query(
-        collection(db, "citasmedicas"),
-        where("doctorid", "==", doctorId)
-      );
-      const citasSnapshot = await getDocs(citasQuery);
-      const horariosOcupados = citasSnapshot.docs.map(doc => doc.data().horarioid);
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${doctorId}`, {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    });
 
-      // Filtrar horarios disponibles que no estén ocupados y que sean fechas futuras
-      const horariosDisponibles = horariosSnapshot.docs
-        .filter(doc => !horariosOcupados.includes(doc.id))
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        .filter(horario => {
-          // Verificar que la fecha sea futura
-          return isDateFuture(horario.fecha);
-        });
+    if (!res.ok) throw new Error("Error al obtener horarios");
 
-      setAvailableSchedules(horariosDisponibles);
+    const horarios = await res.json();
 
-    } catch (error) {
-      console.error("Error al obtener horarios disponibles:", error);
-      setAvailableSchedules([]);
-    }
-  };
+    // Filtrar horarios futuros
+    const horariosDisponibles = horarios.filter(h => isDateFuture(h.fecha));
+    setAvailableSchedules(horariosDisponibles);
+
+  } catch (error) {
+    console.error("Error al obtener horarios disponibles:", error);
+    setAvailableSchedules([]);
+  }
+};
+
 //Funcion para agendar la cita 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -187,34 +208,47 @@ useEffect(() => {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const citaData = {
-        pacienteid: currentPatientId,
-        doctorid: appointment.doctorId,
-        horarioid: appointment.horarioId,
-        descripcion: appointment.descripcion,
-        estado: 'pendiente' //pendiente va por defecto
-      };
+  e.preventDefault();
 
-      await addDoc(collection(db, "citasmedicas"), citaData);
-      
-      alert('Cita médica agendada con éxito. Estado: Pendiente de confirmación.');
-      
-      setAppointment({
-        specialtyId: '',
-        doctorId: '',
-        horarioId: '',
-        descripcion: ''
-      });
-      setAvailableSchedules([]);
+  try {
+    const user = auth.currentUser;
+    const token = user && await user.getIdToken();
 
-    } catch (error) {
-      console.error("Error al agendar cita médica:", error);
-      alert('Error al agendar la cita. Intenta nuevamente.');
-    }
-  };
+    const citaData = {
+      pacienteid: currentPatientId,
+      doctorid: appointment.doctorId,
+      horarioid: appointment.horarioId,
+      descripcion: appointment.descripcion,
+      estado: 'pendiente'
+    };
+
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citasmedicas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(citaData)
+    });
+
+    if (!res.ok) throw new Error("Error al agendar cita");
+
+    alert('Cita médica agendada con éxito. Estado: Pendiente de confirmación.');
+
+    setAppointment({
+      specialtyId: '',
+      doctorId: '',
+      horarioId: '',
+      descripcion: ''
+    });
+    setAvailableSchedules([]);
+
+  } catch (error) {
+    console.error("Error al agendar cita médica:", error);
+    alert('Error al agendar la cita. Intenta nuevamente.');
+  }
+};
+
 
 
   // Función para obtener el nombre del doctor

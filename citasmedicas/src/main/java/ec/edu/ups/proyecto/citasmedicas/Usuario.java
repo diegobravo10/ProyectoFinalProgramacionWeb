@@ -21,6 +21,7 @@ public class Usuario {
     private String correo;
     private LocalDate fechaNacimiento;
     private String rol;
+    private String telefono;
     private String uid;
     
    
@@ -101,7 +102,8 @@ public class Usuario {
     public void setRol(String rol) {
         this.rol = rol;
     }
-
+    
+    
 	/*public List<CitasMedicas> getCitasComoPaciente() {
 		return citasComoPaciente;
 	}
@@ -109,6 +111,14 @@ public class Usuario {
 	public void setCitasComoPaciente(List<CitasMedicas> citasComoPaciente) {
 		this.citasComoPaciente = citasComoPaciente;
 	}*/
+
+	public String getTelefono() {
+		return telefono;
+	}
+
+	public void setTelefono(String telefono) {
+		this.telefono = telefono;
+	}
 
 	@Override
 	public String toString() {

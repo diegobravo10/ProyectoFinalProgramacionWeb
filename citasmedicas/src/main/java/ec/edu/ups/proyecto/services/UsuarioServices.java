@@ -107,6 +107,14 @@ public class UsuarioServices {
 	        response.put("email", usuario.getCorreo());
 	        response.put("nombre", usuario.getNombre());
 	        response.put("rol", usuario.getRol());
+	        response.put("cedula", usuario.getCedula());
+	        response.put("apellido", usuario.getApellido());
+	        response.put("direccion", usuario.getDireccion());
+	        response.put("telefono", usuario.getTelefono());
+	        response.put("fechaNacimiento", usuario.getFechaNacimiento());
+	        
+
+
 
 	        return Response.ok(response).build();
 
