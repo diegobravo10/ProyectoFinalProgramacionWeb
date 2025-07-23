@@ -4,6 +4,7 @@ import java.util.List;
 
 import ec.edu.ups.proyecto.DAO.CitasMedicasDAO;
 import ec.edu.ups.proyecto.citasmedicas.CitasMedicas;
+import ec.edu.ups.proyecto.citasmedicas.Horario;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 
@@ -13,17 +14,21 @@ public class CitasMedicasON {
 	@Inject 
 	private CitasMedicasDAO daoCM;
 	
-	public void guardarDisponibilidad(CitasMedicas p) {
+	@Inject 
+	private HorarioON onHorario;
+	
+	public void guardarCitasMedicas(CitasMedicas p) {
 		CitasMedicas pe = daoCM.read(p.getIdCita());	
 		if (pe == null) {
 			daoCM.insert(p);
 		} else {
+			p.setIdCita(pe.getIdCita());
 			daoCM.update(p);
 		}
 	
 	}
 	
-	public List<CitasMedicas> getDispoibilidades(){
+	public List<CitasMedicas> getCistasMedicas(){
 		return daoCM.getAll();
 	}
 	
@@ -36,6 +41,26 @@ public class CitasMedicasON {
 		
 	    return daoCM.getCitasPorCedulaPaciente(cedula);
 	}
+	public List<CitasMedicas> getPorDoctor(int id) {
+			
+		    return daoCM.findByDoctorId(id);
+		}
+	
+	public void actualizarEstadoCita(int idCita, String nuevoEstado, int idHorario) {
+	    CitasMedicas cita = daoCM.read(idCita);
+	    Horario horario = onHorario.findById(idHorario);
+
+	    if (cita != null && horario != null) {
+	        cita.setEstado(nuevoEstado);
+	        guardarCitasMedicas(cita);
+	        
+
+	        boolean disponible = nuevoEstado.equalsIgnoreCase("rechazado");
+	        horario.setDisponible(disponible);
+	        onHorario.guardarHorario(horario);
+	    }
+	}
+
 	
 
 }

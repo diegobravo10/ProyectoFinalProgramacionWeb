@@ -105,6 +105,7 @@ public class UsuarioServices {
 	        // Retornar datos del usuario
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("email", usuario.getCorreo());
+	        response.put("idUser", usuario.getIdUser());
 	        response.put("nombre", usuario.getNombre());
 	        response.put("rol", usuario.getRol());
 	        response.put("cedula", usuario.getCedula());

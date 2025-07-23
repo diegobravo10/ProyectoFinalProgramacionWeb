@@ -54,5 +54,21 @@ public class HorarioDAO {
 	             .setParameter("dispId", dispId)
 	             .getResultList();
 	}
+	
+
+    public List<Horario> obtenerHorariosPorDoctor(int doctorId) {
+        String jpql = "SELECT h FROM Horario h WHERE h.disponibilidad.doctor.idUser = :doctorId ORDER BY h.fecha ASC";
+        return em.createQuery(jpql, Horario.class)
+                 .setParameter("doctorId", doctorId)
+                 .getResultList();
+    }
+    
+    public void actualizarEstadoHorario(int idHorario, boolean disponible) {
+        Horario horario = em.find(Horario.class, idHorario);
+        if (horario != null) {
+            horario.setDisponible(disponible);
+            em.merge(horario);
+        }
+    }
 
 }

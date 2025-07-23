@@ -1,5 +1,6 @@
 package ec.edu.ups.proyecto.services;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import ec.edu.ups.proyecto.business.DisponibilidadON;
@@ -64,5 +65,60 @@ public class DisponibilidadServices {
 	                       .build();
 	    }
 	}
+	
+	@POST
+	@Path("/disponibilidades")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response crearDisponibilidad(DisponibilidadRequest request) throws Exception {
+	    LocalTime inicio = LocalTime.parse(request.getHoraInicio());
+	    LocalTime fin = LocalTime.parse(request.getHoraFin());
+
+	    onDisp.crearDisponibilidadYHorarios(
+	        request.getDiaSemana(), inicio, fin, request.getDoctorId()
+	    );
+
+	    return Response.status(Response.Status.CREATED).build();
+	}
+
+	// Clase interna o externa según necesites
+	public static class DisponibilidadRequest {
+	    private String diaSemana;
+	    private String horaInicio;
+	    private String horaFin;
+	    private String doctorId;
+
+	    public String getDiaSemana() {
+	        return diaSemana;
+	    }
+
+	    public void setDiaSemana(String diaSemana) {
+	        this.diaSemana = diaSemana;
+	    }
+
+	    public String getHoraInicio() {
+	        return horaInicio;
+	    }
+
+	    public void setHoraInicio(String horaInicio) {
+	        this.horaInicio = horaInicio;
+	    }
+
+	    public String getHoraFin() {
+	        return horaFin;
+	    }
+
+	    public void setHoraFin(String horaFin) {
+	        this.horaFin = horaFin;
+	    }
+
+	    public String getDoctorId() {
+	        return doctorId;
+	    }
+
+	    public void setDoctorId(String doctorId) {
+	        this.doctorId = doctorId;
+	    }
+	}
+
 
 }

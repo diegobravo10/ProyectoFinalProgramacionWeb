@@ -14,60 +14,58 @@ const Perfil = () => {
   const [cedula, setCedula] = useState("");
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [rol, setRol] = useState("")
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [espid, setEspid] = useState("");
   const [docId, setDocId] = useState("");
+  const [idEsp , setIdEsp] = useState("")
   const [especialidades, setEspecialidades] = useState([]);
 
 
 
-  useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
-
-         
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setCorreo(datos.correo || "");
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
-            setCedula(datos.cedula || "");
-            setDireccion(datos.direccion || "");
-            setTelefono(datos.telefono || "");
-
-            const espe = doc(db, "especialidad", datos.especialidadid);
-            const docEspe = await getDoc(espe);
-            const datEsp = docEspe.data();
-
-            setEspid(datEsp.nombre || "")
-
-            if (datos.fechaNacimiento && datos.fechaNacimiento.toDate) {
-                    const fecha = datos.fechaNacimiento.toDate();
-                    const yyyy = fecha.getFullYear();
-                    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-                    const dd = String(fecha.getDate()).padStart(2, '0');
-                    setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
-            } else {
-                    setFechaNacimiento("");
-            }
-
-
-          } else {
-            console.warn("No se encontró el usuario");
-          }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
+ useEffect(() => {
+  const storedUid = localStorage.getItem("uid");
+  if (storedUid) {
+    const cargarDatos = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedUid}`);
+        if (!response.ok) {
+          throw new Error("No se encontró el doctor");
         }
-      };
 
-      cargarDatos();
-    }
-  }, []);
+        const datos = await response.json();
+
+        setDocId(datos.uid || ""); // Guardamos el uid si es útil más adelante
+        setCorreo(datos.correo || "");
+        setNombre(datos.nombre || "");
+        setApellido(datos.apellido || "");
+        setCedula(datos.cedula || "");
+        setDireccion(datos.direccion || "");
+        setTelefono(datos.telefono || "");
+        setRol(datos.rol);
+
+        if (datos.fechaNacimiento) {
+          const fecha = new Date(datos.fechaNacimiento);
+          const yyyy = fecha.getFullYear();
+          const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dd = String(fecha.getDate()).padStart(2, '0');
+          setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
+        }
+
+        if (datos.especialidad && datos.especialidad.nombre) {
+          setEspid(datos.especialidad.nombre);
+          setIdEsp(datos.especialidad.idEspecialidad);
+        }
+
+      } catch (error) {
+        console.error("Error al obtener los datos:", error);
+      }
+    };
+
+    cargarDatos();
+  }
+}, []);
+
 
 
 useEffect(() => {
@@ -89,31 +87,50 @@ useEffect(() => {
 
 
 const handleGuardar = async () => {
-  if (!docId) return;
+  const uid = localStorage.getItem("uid");
+  if (!uid) {
+    alert("UID no disponible");
+    return;
+  }
 
   try {
-    const userRef = doc(db, "users", docId);
-
-    const fechaComoTimestamp = fechaNacimiento
-    ? Timestamp.fromDate(new Date(fechaNacimiento + "T12:00:00"))  
-    : null;
-
-
-    await updateDoc(userRef, {
+    // Construir el objeto Doctor que se enviará al backend
+    const doctor = {
+      uid,
       nombre,
       apellido,
       cedula,
       direccion,
       telefono,
-      fechaNacimiento: fechaComoTimestamp,
+      correo,
+      rol,
+      fechaNacimiento: fechaNacimiento, // yyyy-mm-dd formato ISO
+      especialidad: {
+        idEspecialidad: parseInt(idEsp) // MUY IMPORTANTE: debe ser int
+      }
+    };
+
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+      method: "POST", // Usa "PUT" si tienes implementado update
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(doctor)
     });
 
-    alert("Datos actualizados correctamente");
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Datos actualizados correctamente");
+    } else {
+      alert("Error: " + data.mensaje);
+    }
   } catch (error) {
     console.error("Error al guardar:", error);
     alert("Ocurrió un error al guardar los cambios.");
   }
 };
+
 
 
 

@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.Date;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+
 
 @Entity
 public class Horario {
@@ -12,7 +15,9 @@ public class Horario {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id_horario")
    private int idHorario;
-   private Date fecha;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "America/Guayaquil")
+    @Column(name = "fecha")
+    private Date fecha;
    private boolean disponible;
 
    

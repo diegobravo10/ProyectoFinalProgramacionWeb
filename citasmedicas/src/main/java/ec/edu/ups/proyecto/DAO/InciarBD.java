@@ -38,7 +38,7 @@ public class InciarBD {
 
 	
 	@PostConstruct
-	public void init() {
+	public void init() throws Exception {
 		System.out.println("Inicializando BD");
 		
 		Especialidad esp = new Especialidad();
@@ -49,12 +49,13 @@ public class InciarBD {
 		
 		Doctor doc =  new Doctor();
 		doc.setCedula("0702981770");
-		doc.setNombre("Diego");
-		doc.setApellido("Bravo");
+		doc.setNombre("Diego Alexander");
+		doc.setApellido("Bravo Toledo");
 		doc.setCorreo("brzoale2510@gmail.com");
 		doc.setDireccion("Jubones");
 		doc.setEspecialidad(esp);
 		doc.setRol("doctor");
+		doc.setUid("lLiodchjbZVa5GXdXAuNRzUZ5QG2");
 		
 		daoDoctor.insert(doc); 
 		
@@ -86,7 +87,7 @@ public class InciarBD {
         daoHorario.insert(horario);
 		
 		CitasMedicas cita = new CitasMedicas();
-        cita.setEstado("Confirmada");
+        cita.setEstado("confirmado");
         cita.setDescripcion("Chequeo general");
         cita.setDoctor(doc);
         cita.setPaciente(persona);

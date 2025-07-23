@@ -30,7 +30,6 @@ public class Usuario {
     
     
     
-    
     public int getIdUser() {
         return idUser;
     }

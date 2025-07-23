@@ -22,8 +22,8 @@ public class CitasMedicasDAO {
 			
 		}
 	
-	public CitasMedicas read( int idEspecialidad ) {
-		CitasMedicas c = em.find(CitasMedicas.class, idEspecialidad);
+	public CitasMedicas read( int idCita ) {
+		CitasMedicas c = em.find(CitasMedicas.class, idCita);
 		 return c;	
 		}
 	
@@ -48,6 +48,13 @@ public class CitasMedicasDAO {
 	    String jpql = "SELECT c FROM CitasMedicas c WHERE c.doctor.cedula = :cedula";
 	    return em.createQuery(jpql, CitasMedicas.class)
 	             .setParameter("cedula", cedulaDoctor)
+	             .getResultList();
+	}
+	
+	public List<CitasMedicas> findByDoctorId(int idUser) {
+	    String jpql = "SELECT c FROM CitasMedicas c WHERE c.doctor.idUser = :idUser";
+	    return em.createQuery(jpql, CitasMedicas.class)
+	             .setParameter("idUser", idUser)
 	             .getResultList();
 	}
 

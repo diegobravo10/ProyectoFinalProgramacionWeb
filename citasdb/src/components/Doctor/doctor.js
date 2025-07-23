@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where, updateDoc, doc, getDoc, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../servicios/firebase.js";
+import axios from "axios";
 
 import './doctor.css'
 
@@ -30,29 +31,25 @@ const Doctor = () => {
   const [pacientes, setPacientes] = useState([]);
 
   // Cargar datos del usuario logeado
-  useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
+useEffect(() => {
+  const storedId = localStorage.getItem("uid");
+  if (storedId) {
+    setDocId(storedId);
+    const cargarDatos = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
+        
+        const datos = response.data;
+        setNombre(datos.nombre || "");
+        setApellido(datos.apellido || "");
+      } catch (error) {
+        console.error("Error al obtener datos del doctor desde el backend:", error);
+      }
+    };
+    cargarDatos();
+  }
+}, []);
 
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
-          } else {
-            console.warn("No se encontró el usuario");
-          }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
-        }
-      };
-      cargarDatos();
-    }
-  }, []);
 
   // Función helper para convertir Timestamp a string (Fecha y Hora)
   //Ejemplo: "04/06/2025, 15:30"
@@ -158,69 +155,75 @@ const Doctor = () => {
     cargarDoctores();
   }, [especialidadSeleccionada]);
 
-  // Cuando cambia doctor, cargar citas + datos pacientes y horarios
-  useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (!storedId) return;
 
-    // Consulta para las citas del doctor logueado
-    const q = query(collection(db, "citasmedicas"), where("doctorid", "==", storedId));
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const citasData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCitas(citasData);
+useEffect(() => {
+  const storedId = localStorage.getItem("uid");
+  if (!storedId) return;
 
-      // Extraer ids únicos pacientes y horarios
-      const pacienteIds = [...new Set(citasData.map(c => c.pacienteid))];
-      const horarioIds = [...new Set(citasData.map(c => c.horarioid))];
+  const cargarCitas = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8080/citasmedicas/citasmedicas/citas/doctor/${storedId}/conDetalles`);
+      const citasConDetalles = response.data;
 
-      // Cargar pacientes
-      const pacientesPromises = pacienteIds.map(id => getDoc(doc(db, "users", id)));
-      const pacientesDocs = await Promise.all(pacientesPromises);
-      const pacientes = {};
-      pacientesDocs.forEach(docSnap => {
-        if (docSnap.exists()) {
-          pacientes[docSnap.id] = docSnap.data();
+      // Separar citas, pacientes y horarios
+      setCitas(citasConDetalles);
+
+      // Mapear pacientes
+      const pacientesMap = {};
+      citasConDetalles.forEach(cita => {
+        if (cita.paciente) {
+          pacientesMap[cita.paciente.idUser] = cita.paciente;
         }
       });
-      setPacientesMap(pacientes);
+      setPacientesMap(pacientesMap);
 
-      // Cargar horarios
-      const horariosPromises = horarioIds.map(id => getDoc(doc(db, "horarios", id)));
-      const horariosDocs = await Promise.all(horariosPromises);
-      const horarios = {};
-      horariosDocs.forEach(docSnap => {
-        if (docSnap.exists()) {
-          horarios[docSnap.id] = docSnap.data();
+      // Mapear horarios
+      const horariosMap = {};
+      citasConDetalles.forEach(cita => {
+        if (cita.horario) {
+          horariosMap[cita.horario.idHorario] = cita.horario;
         }
       });
-      setHorariosMap(horarios);
-    });
+      setHorariosMap(horariosMap);
 
-    return () => unsubscribe();
-  }, []);
+    } catch (error) {
+      console.error("Error al obtener citas del doctor:", error);
+    }
+  };
+
+  cargarCitas();
+}, []);
+
 
   // Actualizar estado de cita
 const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
   try {
-    const citaRef = doc(db, "citasmedicas", idCita);
-    const horarioRef = doc(db, "horarios", idHorario);
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nuevoEstado,
+        idHorario
+      })
+    });
 
-    // Actualiza el estado de la cita
-    await updateDoc(citaRef, { estado: nuevoEstado });
+    if (!response.ok) {
+      throw new Error("Error actualizando estado de la cita");
+    }
 
-    // Actualiza la disponibilidad del horario según el estado
-    const disponibilidad = (nuevoEstado.toLowerCase() === "rechazado");  // true si es rechazada, false en caso de ser confirmado
-    await updateDoc(horarioRef, { disponibilidad });
-
-    setCitas(citas.map(c => 
+    // Actualizar localmente el estado en React
+    setCitas(citas.map(c =>
       c.id === idCita ? { ...c, estado: nuevoEstado } : c
     ));
 
   } catch (error) {
-    console.error("Error al actualizar cita o disponibilidad del horario:", error);
+    console.error("Error al actualizar estado de cita:", error);
   }
 };
+
 
   // Validar disponibilidad de horario (ahora con fecha y hora)
   const validarDisponibilidadHorario = async (doctorId, nuevaFechaHora, horarioIdAExcluir = null) => {
@@ -356,134 +359,99 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
           </tr>
         </thead>
         <tbody>
-        {citas.length > 0 ? (
-          citas
-            .sort((a, b) => {
-              const horarioA = horariosMap[a.horarioid];
-              const horarioB = horariosMap[b.horarioid];
-              
- 
-              if (!horarioA && !horarioB) return 0;
-              if (!horarioA) return 1;
-              if (!horarioB) return -1;
-              
-  
-              let fechaA, fechaB;
-              
-  
-              if (typeof horarioA.fecha === 'string') {
-                fechaA = new Date(horarioA.fecha);
-              } else if (horarioA.fecha && horarioA.fecha.seconds) {
-                fechaA = new Date(horarioA.fecha.seconds * 1000);
-              } else if (horarioA.fecha instanceof Date) {
-                fechaA = horarioA.fecha;
-              } else {
-                fechaA = new Date(0); 
-              }
-              
-              if (typeof horarioB.fecha === 'string') {
-                fechaB = new Date(horarioB.fecha);
-              } else if (horarioB.fecha && horarioB.fecha.seconds) {
-                fechaB = new Date(horarioB.fecha.seconds * 1000);
-              } else if (horarioB.fecha instanceof Date) {
-                fechaB = horarioB.fecha;
-              } else {
-                fechaB = new Date(0); 
-              }
+          {citas.length > 0 ? (
+            citas
+              .sort((a, b) => {
+                const fechaA = new Date(a.horario?.fecha || 0);
+                const fechaB = new Date(b.horario?.fecha || 0);
+                return fechaB - fechaA;
+              })
+              .map(cita => {
+                const paciente = cita.paciente;
+                const horario = cita.horario;
 
-              return fechaB - fechaA; 
-            })
-            .map(cita => {
-              const paciente = pacientesMap[cita.pacienteid];
-              const horario = horariosMap[cita.horarioid];
+                return (
+                  <tr key={cita.id}>
+                    <td>{paciente ? `${paciente.nombre} ${paciente.apellido}` : "Desconocido"}</td>
 
-              return (
-                <tr key={cita.id}>
-                  <td>{paciente ? `${paciente.nombre} ${paciente.apellido}` : cita.pacienteid}</td>
-                  <td>
-                    {editandoCitaId === cita.id ? (
-                      <div>
+                    <td>
+                      {editandoCitaId === cita.id ? (
+                        <div>
+                          <input
+                            type="datetime-local"
+                            value={fechaHoraEdit}
+                            onChange={e => {
+                              setFechaHoraEdit(e.target.value);
+                              setErrorValidacion("");
+                            }}
+                          />
+                          {errorValidacion && (
+                            <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                              {errorValidacion}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        horario ? formatearFecha(horario.fecha) : "Sin horario"
+                      )}
+                    </td>
+
+                    <td>
+                      {editandoCitaId === cita.id ? (
                         <input
-                          type="datetime-local"
-                          value={fechaHoraEdit}
-                          onChange={e => {
-                            setFechaHoraEdit(e.target.value);
-                            setErrorValidacion(""); 
-                          }}
+                          type="text"
+                          value={descripcionEdit}
+                          onChange={e => setDescripcionEdit(e.target.value)}
                         />
-                        {errorValidacion && (
-                          <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
-                            {errorValidacion}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      horario ? (
-                        formatearFecha(horario.fecha) || "Sin horario"
-                      ) : "Sin horario"
-                    )}
-                  </td>
-                  <td>
-                    {editandoCitaId === cita.id ? (
-                      <input
-                        type="text"
-                        value={descripcionEdit}
-                        onChange={e => setDescripcionEdit(e.target.value)}
-                      />
-                    ) : (
-                      cita.descripcion
-                    )}
-                  </td>
-                  <td className={
-                    cita.estado === "confirmado" ? "texto-confirmado" :
-                    cita.estado === "rechazado" ? "texto-rechazado" :
-                    cita.estado === "pendiente" ? "texto-pendiente" :
-                    ""
-                  }>
-                    {cita.estado}
-                  </td>
-                  <td>
-                    {editandoCitaId === cita.id ? (
-                      <>
-                        <button
-                          onClick={() => guardarEdicion(cita.id)}
-                          disabled={cargandoValidacion}
-                        >
-                          {cargandoValidacion ? "Validando..." : "Guardar"}
-                        </button>
-                        <button
-                          onClick={() => {
+                      ) : (
+                        cita.descripcion || "Sin descripción"
+                      )}
+                    </td>
+
+                    <td className={
+                      cita.estado === "confirmado" ? "texto-confirmado" :
+                      cita.estado === "rechazado" ? "texto-rechazado" :
+                      cita.estado === "pendiente" ? "texto-pendiente" : ""
+                    }>
+                      {cita.estado || "pendiente"}
+                    </td>
+
+                    <td>
+                      {editandoCitaId === cita.id ? (
+                        <>
+                          <button onClick={() => guardarEdicion(cita.id)} disabled={cargandoValidacion}>
+                            {cargandoValidacion ? "Validando..." : "Guardar"}
+                          </button>
+                          <button onClick={() => {
                             setEditandoCitaId(null);
                             setErrorValidacion("");
-                          }}
-                          disabled={cargandoValidacion}
-                        >
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => {
-                          setEditandoCitaId(cita.id);
-                          setDescripcionEdit(cita.descripcion);
-                          setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
-                          setErrorValidacion("");
-                        }}>Modificar</button>
+                          }} disabled={cargandoValidacion}>
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => {
+                            setEditandoCitaId(cita.id);
+                            setDescripcionEdit(cita.descripcion || "");
+                            setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
+                            setErrorValidacion("");
+                          }}>Modificar</button>
 
-                        <button onClick={() => actualizarEstadoCita(cita.id, "confirmado", cita.horarioid)}>Confirmar</button>
-                        <button onClick={() => actualizarEstadoCita(cita.id, "rechazado", cita.horarioid)}>Rechazar</button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              )
-            })
-        ) : (
-          <tr>
-            <td colSpan="5">No hay citas para el doctor seleccionado.</td>
-          </tr>
-        )}
-      </tbody>
+                          <button onClick={() => actualizarEstadoCita(cita.id, "confirmado", horario?.idHorario)}>Confirmar</button>
+                          <button onClick={() => actualizarEstadoCita(cita.id, "rechazado", horario?.idHorario)}>Rechazar</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
+          ) : (
+            <tr>
+              <td colSpan="5">No hay citas para el doctor seleccionado.</td>
+            </tr>
+          )}
+        </tbody>
       </table>
 
       <hr/>

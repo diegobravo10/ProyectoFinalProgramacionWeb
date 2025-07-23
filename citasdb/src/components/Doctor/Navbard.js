@@ -24,33 +24,34 @@ const NavbarD = () => {
       });
   };
 
- useEffect(() => {
-  //Extraemos los datos del doctor para mostrar en pantalla
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
-         
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
+useEffect(() => {
+  const storedId = localStorage.getItem("uid");
 
+  if (storedId) {
+    setDocId(storedId);
 
-          } else {
-            console.warn("No se encontró el usuario");
-          }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
+    const cargarDatos = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
+
+        if (!response.ok) {
+          throw new Error("Error en la solicitud");
         }
-      };
 
-      cargarDatos();
-    }
-  }, []);
+        const datos = await response.json();
+
+        setNombre(datos.nombre || "");
+        setApellido(datos.apellido || "");
+
+      } catch (error) {
+        console.error("Error al obtener datos del doctor:", error);
+      }
+    };
+
+    cargarDatos();
+  }
+}, []);
+
 
 
   return (

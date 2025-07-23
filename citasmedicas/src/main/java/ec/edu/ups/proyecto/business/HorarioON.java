@@ -30,6 +30,23 @@ public class HorarioON {
 		
 	    return daoHorario.getHorarioDisp(id);
 	}
+	
+	public Horario findById(int id) {
+		
+		return daoHorario.read(id);
+	}
+	
+	public List<Horario> getHorariosDispDoc(int doctorid) {
+			
+		    return daoHorario.obtenerHorariosPorDoctor(doctorid);
+		   
+		}
+	
+	public void actualizarEstado(int idHorario, boolean disponible) {
+		
+		daoHorario.actualizarEstadoHorario(idHorario, disponible);
+	}
+
 
 	
 

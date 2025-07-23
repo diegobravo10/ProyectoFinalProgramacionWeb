@@ -63,5 +63,26 @@ public class DoctorServices {
                            .build();
         }
     }
+	
+	@GET
+    @Path("uid/{uid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response obtenerDoctor(@PathParam("uid") String uid) {
+        try {
+            Doctor listado = onDoctor.getDoctorUid(uid);
+            if (listado == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                               .entity(new MensajeJSON("Error", "Doctor no existe"))
+                               .build();
+            }
+            return Response.ok(listado).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                           .entity(new MensajeJSON("Error", e.getMessage()))
+                           .build();
+        }
+    }
+	
+	
 
 }

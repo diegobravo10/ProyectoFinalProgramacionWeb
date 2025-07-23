@@ -55,6 +55,12 @@ public class UsuariosON {
 	
 	}
 	
+	public Usuario findById(int id) {
+			
+			return daoPersona.findById(id);
+		
+		}
+	
 	
 
 }

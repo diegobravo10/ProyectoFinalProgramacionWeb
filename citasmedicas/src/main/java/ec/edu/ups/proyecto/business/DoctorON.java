@@ -15,13 +15,15 @@ public class DoctorON {
 	
 	
 
-	public void guardarDoctor(Doctor p) {
+	public void guardarDoctor(Doctor p) throws Exception {
 		// Buscar persona existente por cédula
-		Doctor pe = daoPersona.read2(p.getCedula());
+		Doctor pe = daoPersona.buscarUID(p.getUid());
 		
 		if (pe == null) {
 		    daoPersona.insert(p);
+		    
 		} else {
+			p.setIdUser(pe.getIdUser());
 		    daoPersona.update(p);
 		}
 
@@ -40,6 +42,12 @@ public class DoctorON {
 		return daoPersona.read2(cedula);
 	
 	}
+	
+	public Doctor getDoctorUid(String uid) throws Exception {
+			
+			return daoPersona.buscarUID(uid);
+		
+		}
 	
 
 }

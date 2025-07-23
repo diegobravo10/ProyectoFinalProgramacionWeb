@@ -27,6 +27,7 @@ const Login = () => {
       // Ejemplo:
       if(userData.rol === 'doctor') {
         navigate('/doctor');
+        localStorage.setItem('idUser', userData.idUser);
       } else if(userData.rol === 'paciente') {
         navigate('/paciente');
       } else if(userData.rol === 'admin') {
@@ -36,7 +37,7 @@ const Login = () => {
       }
 
       // Guardar info en localStorage si quieres
-      localStorage.setItem('cedula', user.uid);
+      localStorage.setItem('uid', user.uid);
       localStorage.setItem('email', user.email);
 
     } else {

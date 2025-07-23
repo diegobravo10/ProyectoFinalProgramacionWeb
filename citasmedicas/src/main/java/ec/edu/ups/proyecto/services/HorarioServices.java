@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -63,5 +64,57 @@ public class HorarioServices {
 	                       .build();
 	    }
 	}
+	
+	
+	@GET
+	@Path("/doctor/{doctorId}/horarios")
+	@Produces(MediaType.APPLICATION_JSON)
+    public List<Horario> obtenerHorariosPorDoctor(@PathParam("doctorId") int doctorId) {
+        return onDisp.getHorariosDispDoc(doctorId);
+    }
+	 
+	@POST
+	@Path("/{idHorario}/disponibilidad")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response actualizarDisponibilidad(
+	    @PathParam("idHorario") int idHorario,
+	    DisponibilidadDTO dto
+	) {
+		
+		System.out.println("PARA SABER:" + dto.getDisponible());
+	    try {
+	        Horario h = onDisp.findById(idHorario);
+	        if (h == null) {
+	            return Response.status(Response.Status.NOT_FOUND)
+	                           .entity("Horario no encontrado con id " + idHorario)
+	                           .build();
+	        }
+	        h.setDisponible(dto.getDisponible());
+	        onDisp.guardarHorario(h);
+
+	        return Response.ok().entity(h).build(); // opcional: retorna el horario actualizado
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                       .entity("Error al actualizar disponibilidad")
+	                       .build();
+	    }
+	}
+        
+        public static class DisponibilidadDTO {
+            private Boolean disponible;
+
+            public Boolean getDisponible() {
+                return disponible;
+            }
+
+            public void setDisponible(Boolean disponible) {
+                this.disponible = disponible;
+            }
+        }
+
+    
+
 
 }

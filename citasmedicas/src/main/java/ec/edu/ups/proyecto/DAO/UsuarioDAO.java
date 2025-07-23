@@ -24,6 +24,12 @@ public class UsuarioDAO {
 			
 		}
 	
+	public Usuario findById(int idUser) {
+		Usuario u = em.find(Usuario.class, idUser);
+		 return u;	
+
+	}
+	
 	public Usuario read(String cedula) {
 	    String jpql = "SELECT u FROM Usuario u WHERE u.cedula = :cedula";
 	    TypedQuery<Usuario> query = em.createQuery(jpql, Usuario.class);
@@ -58,6 +64,8 @@ public class UsuarioDAO {
 	    List<Usuario> resultado = query.getResultList();
 	    return resultado.isEmpty() ? null : resultado.get(0);
 	}
+	
+	
 
 
 
