@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, query, where, onSnapshot} from "firebase/f
 import Swal from 'sweetalert2';
 import { auth, provider, db } from "../servicios/firebase.js";
 import { signInWithPopup } from "firebase/auth";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 
 
 const Paciente = () => {
@@ -23,43 +23,42 @@ const [shownAppointments, setShownAppointments] = useState(new Set());
 
 
 // Obtener el ID del paciente actual
-const currentPatientId = localStorage.getItem('cedula');
+const currentPatientId = localStorage.getItem('uid');
 
 useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const user = auth.currentUser;
-      const token = user && await user.getIdToken();
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const token = await user.getIdToken();
 
-      if (!token) {
-        console.error("No se pudo obtener el token.");
-        return;
+        const [especialidadesRes, doctoresRes] = await Promise.all([
+          fetch('http://localhost:8080/citasmedicas/citasmedicas/especialidades', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch('http://localhost:8080/citasmedicas/citasmedicas/doctor', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          })
+        ]);
+
+        if (!especialidadesRes.ok || !doctoresRes.ok) {
+          throw new Error("Error al obtener datos del backend.");
+        }
+
+        const specialtiesList = await especialidadesRes.json();
+        const doctorsList = await doctoresRes.json();
+
+        setSpecialties(specialtiesList);
+        setDoctors(doctorsList);
+        console.log("Doctores desde el backend:", doctorsList);
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
       }
-
-      const [especialidadesRes, doctoresRes] = await Promise.all([
-        fetch('http://localhost:8080/citasmedicas/citasmedicas/especialidades', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        }),
-        fetch('http://localhost:8080/citasmedicas/citasmedicas/doctor', {  
-          headers: { 'Authorization': 'Bearer ' + token }
-        })
-      ]);
-
-      if (!especialidadesRes.ok || !doctoresRes.ok) {
-        throw new Error("Error al obtener datos del backend.");
-      }
-
-      const specialtiesList = await especialidadesRes.json();
-      const doctorsList = await doctoresRes.json();
-
-      setSpecialties(specialtiesList);
-      setDoctors(doctorsList);
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
+    } else {
+      console.warn("Usuario no autenticado");
     }
-  };
+  });
 
-  fetchData();
+  return () => unsubscribe(); // Limpieza del listener
 }, []);
 
 
@@ -160,13 +159,17 @@ useEffect(() => {
 
 
   useEffect(() => {
-    const filtered = doctors.filter(doc => doc.especialidadid === appointment.specialtyId);
+    const filtered = doctors.filter(doc =>
+  doc.especialidad?.nombre?.toLowerCase() === appointment.specialtyId?.toLowerCase());
+  
+  
     setFilteredDoctors(filtered);
     setAppointment(prev => ({ ...prev, doctorId: '', horarioId: '' }));
     setAvailableSchedules([]);
   }, [appointment.specialtyId, doctors]);
 
   // Función para obtener horarios disponibles del doctor seleccionado
+  
 const fetchAvailableSchedules = async (doctorId) => {
   if (!doctorId) {
     setAvailableSchedules([]);
@@ -177,7 +180,7 @@ const fetchAvailableSchedules = async (doctorId) => {
     const user = auth.currentUser;
     const token = user && await user.getIdToken();
 
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${doctorId}`, {
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`, {
       headers: {
         'Authorization': 'Bearer ' + token
       }
@@ -187,7 +190,7 @@ const fetchAvailableSchedules = async (doctorId) => {
 
     const horarios = await res.json();
 
-    // Filtrar horarios futuros
+    // Asegúrate que h.fecha es compatible con Date
     const horariosDisponibles = horarios.filter(h => isDateFuture(h.fecha));
     setAvailableSchedules(horariosDisponibles);
 
@@ -196,6 +199,7 @@ const fetchAvailableSchedules = async (doctorId) => {
     setAvailableSchedules([]);
   }
 };
+
 
 //Funcion para agendar la cita 
   const handleChange = (e) => {

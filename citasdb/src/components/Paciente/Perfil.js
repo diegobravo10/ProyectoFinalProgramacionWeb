@@ -60,11 +60,17 @@ const Perfil = () => {
 
 //Funcion para guardar los datos modificados
   const handleGuardar = async () => {
-  try {
     const user = auth.currentUser;
     const token = user && await user.getIdToken();
 
+    if (!token) {
+    alert("UID no disponible");
+    return;
+  }
+  try {
+    
     const payload = {
+      correo,
       nombre,
       apellido,
       cedula,
@@ -73,11 +79,10 @@ const Perfil = () => {
       fechaNacimiento, // puedes enviar como string ISO: "2025-07-19"
     };
 
-    const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+    const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
       },
       body: JSON.stringify(payload)
     });

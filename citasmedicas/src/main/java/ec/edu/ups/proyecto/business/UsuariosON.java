@@ -23,6 +23,7 @@ public class UsuariosON {
 		if (pe == null) {
 		    daoPersona.insert(p);
 		} else {
+			p.setIdUser(pe.getIdUser());
 		    daoPersona.update(p);
 		}
 
