@@ -439,7 +439,7 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
                           }}>Modificar</button>
 
                           <button onClick={() => actualizarEstadoCita(cita.id, "confirmado", horario?.idHorario)}>Confirmar</button>
-                          <button onClick={() => actualizarEstadoCita(cita.id, "rechazado", horario?.idHorario)}>Rechazar</button>
+                          <button className="botonR" onClick={() => actualizarEstadoCita(cita.id, "rechazado", horario?.idHorario)}>Rechazar</button>
                         </>
                       )}
                     </td>

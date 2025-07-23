@@ -65,7 +65,7 @@ td button {
 }
 
 td button:last-of-type {
-  background-color: #dc3545;
+  background-color: #0d5109;
 }
 
 td button:hover {
@@ -76,4 +76,8 @@ td button:hover {
   align-items: center;
   justify-content: center;
 
+}
+
+.botonE{
+    background-color: #157347 !important;
 }

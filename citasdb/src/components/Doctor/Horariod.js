@@ -54,10 +54,9 @@ const cambiarEstado = async (horario) => {
         "Content-Type": "application/json"
       },
     
-      body: JSON.stringify({ disponible: !horario.disponibilidad }) // objeto con propiedad disponible
+      body: JSON.stringify({ disponible: !horario.disponible }) // objeto con propiedad disponible
     });
 
-    console.log("Enviando estado nuevo:", !horario.disponibilidad);
 
     if (!response.ok) throw new Error("Error al actualizar disponibilidad");
     cargarHorarios(localStorage.getItem("idUser"));
@@ -89,6 +88,7 @@ const cambiarEstado = async (horario) => {
 
     if (!response.ok) throw new Error("Error al crear disponibilidad");
     alert("Disponibilidad creada correctamente");
+    cargarHorarios(localStorage.getItem("idUser"))
   } catch (error) {
     console.error("Error:", error);
     alert("Ocurrió un error");
@@ -118,7 +118,7 @@ const cambiarEstado = async (horario) => {
       <label>Hora Fin:</label>
       <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
 
-      <button onClick={crearDisponibilidad}>Crear Disponibilidad</button>
+      <button  onClick={crearDisponibilidad}>Crear Disponibilidad</button>
     </div>
 
 
@@ -132,17 +132,20 @@ const cambiarEstado = async (horario) => {
         </thead>
         <tbody>
           {horarios.map((h, i) => {
-            console.log(h);
+            {/*console.log(h);*/}
             return (
               <tr key={i}>
                 <td>{new Date(h.fecha).toLocaleString()}</td>
                 <td style={{ color: h.disponible ? "green" : "red" }}>
                   {h.disponible ? "Disponible" : "No disponible"}
                 </td>
+                <td>
                 <button
+                  className="botonE"
                   onClick={() => cambiarEstado(h)}>
                   Cambiar Estado
                 </button>
+                </td>
               </tr>
             );
           })}
