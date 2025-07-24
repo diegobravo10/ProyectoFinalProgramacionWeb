@@ -10,6 +10,8 @@ const Horario = () => {
   const [diaSemana, setDiaSemana] = useState("MONDAY");
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFin, setHoraFin] = useState("");
+  const [intervalo, setIntervalo] = useState(30);
+
 
 
   useEffect(() => {
@@ -74,7 +76,8 @@ const cambiarEstado = async (horario) => {
     diaSemana,
     horaInicio,
     horaFin,
-    doctorId: doctorId
+    doctorId: doctorId,
+    intervalo: intervalo
   };
 
   try {
@@ -117,6 +120,14 @@ const cambiarEstado = async (horario) => {
 
       <label>Hora Fin:</label>
       <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
+
+      <label>Intervalo (minutos):</label>
+      <input 
+        type="number" 
+        value={intervalo} 
+        min="1"
+        onChange={(e) => setIntervalo(e.target.value)} 
+      />
 
       <button  onClick={crearDisponibilidad}>Crear Disponibilidad</button>
     </div>

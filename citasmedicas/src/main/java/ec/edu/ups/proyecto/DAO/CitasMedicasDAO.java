@@ -1,5 +1,9 @@
 package ec.edu.ups.proyecto.DAO;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 import ec.edu.ups.proyecto.citasmedicas.CitasMedicas;
@@ -57,5 +61,30 @@ public class CitasMedicasDAO {
 	             .setParameter("idUser", idUser)
 	             .getResultList();
 	}
+	
+	public List<CitasMedicas> obtenerCitasPendientesDeRecordatorio(int horasDesde, int horasHasta, boolean es24h) {
+	    String flag = es24h ? "recordatorio24hEnviado" : "recordatorio2hEnviado";
+
+	    String jpql = "SELECT c FROM CitasMedicas c " +
+	              "WHERE c.horario.fecha BETWEEN :desde AND :hasta " +
+	              "AND c." + flag + " = false " +
+	              "AND c.estado = 'confirmado'";
+
+
+	    ZoneId zoneId = ZoneId.of("America/Guayaquil");
+	    ZonedDateTime ahora = ZonedDateTime.now(zoneId);
+	    ZonedDateTime desdeZdt = ahora.plusHours(horasDesde).minusMinutes(1);
+	    ZonedDateTime hastaZdt = ahora.plusHours(horasHasta).plusMinutes(1);
+
+	    Date desde = Date.from(desdeZdt.toInstant());
+	    Date hasta = Date.from(hastaZdt.toInstant());
+
+	    return em.createQuery(jpql, CitasMedicas.class)
+	             .setParameter("desde", desde)
+	             .setParameter("hasta", hasta)
+	             .getResultList();
+	}
+
+
 
 }

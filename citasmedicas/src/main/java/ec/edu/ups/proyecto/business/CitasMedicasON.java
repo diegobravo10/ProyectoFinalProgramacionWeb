@@ -20,6 +20,8 @@ public class CitasMedicasON {
 	public void guardarCitasMedicas(CitasMedicas p) {
 		CitasMedicas pe = daoCM.read(p.getIdCita());	
 		if (pe == null) {
+			p.setRecordatorio24hEnviado(false);
+			p.setRecordatorio2hEnviado(false);
 			daoCM.insert(p);
 		} else {
 			p.setIdCita(pe.getIdCita());
@@ -59,6 +61,16 @@ public class CitasMedicasON {
 	        horario.setDisponible(disponible);
 	        onHorario.guardarHorario(horario);
 	    }
+	}
+	
+	public CitasMedicas buscarPorId(int idCita) {
+		
+		return daoCM.read(idCita);
+	}
+	
+	public List<CitasMedicas> obtenerCitasEnRango(int horasDesde, int horasHasta, boolean flag){
+		
+		return daoCM.obtenerCitasPendientesDeRecordatorio(horasDesde, horasHasta, flag);
 	}
 
 	

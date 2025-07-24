@@ -13,6 +13,9 @@ public class CitasMedicas {
 	private int idCita;
 	    private String estado;
 	    private String descripcion;
+	    private boolean recordatorio24hEnviado;
+	    private boolean recordatorio2hEnviado;
+
 	    
 	    @ManyToOne(fetch = FetchType.EAGER)
 	    @JoinColumn(name = "paciente_id")
@@ -74,6 +77,23 @@ public class CitasMedicas {
 
 		public void setDoctor(Doctor doctor) {
 			this.doctor = doctor;
+		}
+		
+
+		public boolean isRecordatorio24hEnviado() {
+			return recordatorio24hEnviado;
+		}
+
+		public void setRecordatorio24hEnviado(boolean recordatorio24hEnviado) {
+			this.recordatorio24hEnviado = recordatorio24hEnviado;
+		}
+
+		public boolean isRecordatorio2hEnviado() {
+			return recordatorio2hEnviado;
+		}
+
+		public void setRecordatorio2hEnviado(boolean recordatorio2hEnviado) {
+			this.recordatorio2hEnviado = recordatorio2hEnviado;
 		}
 
 		@Override

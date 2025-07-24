@@ -49,7 +49,7 @@ public class DisponibilidadON {
 	    return daoDisp.getDisponibilidadPorDoctor(id);
 	}
 	
-	public void crearDisponibilidadYHorarios(String diaSemana, LocalTime horaInicio, LocalTime horaFin, String uid) throws Exception {
+	public void crearDisponibilidadYHorarios(String diaSemana, LocalTime horaInicio, LocalTime horaFin, String uid, int intervaloMinutos) throws Exception {
 	    // 1. Buscar el doctor
 	    Doctor doctor = onDoctor.getDoctorUid(uid);
 	    if (doctor == null) {
@@ -69,11 +69,11 @@ public class DisponibilidadON {
 	    DayOfWeek dia = DayOfWeek.valueOf(diaSemana.toUpperCase());
 	    LocalDate fechaBase = LocalDate.now().with(TemporalAdjusters.nextOrSame(dia));
 
-	    // 4. Generar horarios cada 30 minutos
+	    // 4. Generar horarios cada intervaloMinutos
 	    List<Horario> horarios = new ArrayList<>();
 	    LocalTime actual = horaInicio;
 
-	    while (!actual.isAfter(horaFin.minusMinutes(30))) {
+	    while (!actual.isAfter(horaFin.minusMinutes(intervaloMinutos))) {
 	        Horario horario = new Horario();
 
 	        // Combinar fecha + hora
@@ -88,9 +88,10 @@ public class DisponibilidadON {
 	        horarios.add(horario);
 
 	        // Siguiente intervalo
-	        actual = actual.plusMinutes(30);
+	        actual = actual.plusMinutes(intervaloMinutos);
 	    }
 	}
+
 
 
 }

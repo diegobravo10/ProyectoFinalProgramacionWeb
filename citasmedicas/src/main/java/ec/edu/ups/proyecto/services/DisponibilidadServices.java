@@ -74,7 +74,7 @@ public class DisponibilidadServices {
 	    LocalTime fin = LocalTime.parse(request.getHoraFin());
 
 	    onDisp.crearDisponibilidadYHorarios(
-	        request.getDiaSemana(), inicio, fin, request.getDoctorId()
+	        request.getDiaSemana(), inicio, fin, request.getDoctorId(), request.getIntervalo()
 	    );
 
 	    return Response.status(Response.Status.CREATED).build();
@@ -86,6 +86,7 @@ public class DisponibilidadServices {
 	    private String horaInicio;
 	    private String horaFin;
 	    private String doctorId;
+	    private int intervalo;
 
 	    public String getDiaSemana() {
 	        return diaSemana;
@@ -118,6 +119,18 @@ public class DisponibilidadServices {
 	    public void setDoctorId(String doctorId) {
 	        this.doctorId = doctorId;
 	    }
+
+		public int getIntervalo() {
+			return intervalo;
+		}
+
+		public void setIntervalo(int intervalo) {
+			this.intervalo = intervalo;
+		}
+
+		
+	    
+	    
 	}
 
 

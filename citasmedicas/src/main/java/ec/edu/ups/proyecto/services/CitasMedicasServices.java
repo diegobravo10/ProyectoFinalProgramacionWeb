@@ -32,6 +32,13 @@ public class CitasMedicasServices {
 	 @Inject
 	    private DoctorON onDoctor;
 	 
+	 @Inject
+	 private EmailService emailService;
+	 
+	 @Inject
+	 private WhatsAppService whatsappService;
+
+	 
 
 	    // Obtener todas las citas
 	    @GET
@@ -150,6 +157,46 @@ public class CitasMedicasServices {
 
 	        try {
 	            onCitas.actualizarEstadoCita(idCita, estadoRequest.getNuevoEstado(), estadoRequest.getIdHorario());
+	            
+	            if ("confirmado".equalsIgnoreCase(estadoRequest.getNuevoEstado())) {
+	                var cita = onCitas.buscarPorId(idCita);
+	                if (cita != null && cita.getPaciente() != null && cita.getDoctor() != null) {
+	                    String destinatario = cita.getPaciente().getCorreo();
+	                    String asunto = "Confirmación de su cita médica";
+
+	                    // Mensaje con doctor y fecha formateada
+	                    String cuerpo = "Estimado/a " + cita.getPaciente().getNombre() + ",\n\n" +
+	                            "Su cita médica ha sido confirmada.\n\n" +
+	                            "Detalles de la cita:\n" +
+	                            "Doctor: Dr. " + cita.getDoctor().getNombre() + " " + cita.getDoctor().getApellido() + "\n" +
+	                            "Fecha y hora: " + cita.getHorario().getFecha() + "\n\n" +
+	                            "Por favor, llegue con 15 minutos de anticipación.\n\n" +
+	                            "Gracias por confiar en nuestro servicio.\n" +
+	                            "Atentamente,\nCitas Medicas =)";
+
+	                    emailService.enviarCorreo(destinatario, asunto, cuerpo);
+	                }
+	            }
+	            
+	            if ("confirmado".equalsIgnoreCase(estadoRequest.getNuevoEstado())) {
+	                var cita = onCitas.buscarPorId(idCita);
+	                if (cita != null && cita.getPaciente() != null) {
+	                    String telefono = cita.getPaciente().getTelefono();
+	                    
+	                    // Asegurar formato internacional con +593
+	                    if (!telefono.startsWith("+")) {
+	                        telefono = "+593" + telefono.substring(1); // asumiendo que guarda 09xxxxxxxx
+	                    }
+
+	                    String mensaje = "Hola " + cita.getPaciente().getNombre() +
+	                                     ", su cita con el Dr. " + cita.getDoctor().getNombre() +
+	                                     " ha sido confirmada para el " + cita.getHorario().getFecha() + ".";
+	                    whatsappService.enviarMensaje(telefono, mensaje);
+	                }
+	            }
+
+	            
+	            
 	            return Response.ok(new MensajeJSON("success", "Estado de la cita actualizado")).build();
 	        } catch (Exception e) {
 	            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -179,6 +226,68 @@ public class CitasMedicasServices {
 	            this.idHorario = idHorario;
 	        }
 	    }
+	    
+	    
+	    @POST
+	    @Path("/{idCita}/editar")
+	    @Consumes(MediaType.APPLICATION_JSON)
+	    @Produces(MediaType.APPLICATION_JSON)
+	    public Response editarCita(
+	        @PathParam("idCita") int idCita,
+	        CitaEdicionDTO dto
+	    ) {
+	        try {
+	            // 1. Buscar la cita
+	            CitasMedicas cita = onCitas.buscarPorId(idCita);
+	            if (cita == null) {
+	                return Response.status(Response.Status.NOT_FOUND)
+	                    .entity("Cita no encontrada con id " + idCita).build();
+	            }
+
+	            // 2. Marcar horario anterior como disponible (si existe)
+	            if (cita.getHorario() != null) {
+	                Horario horarioAnterior = onHorario.findById(cita.getHorario().getIdHorario());
+	                horarioAnterior.setDisponible(true);
+	                onHorario.guardarHorario(horarioAnterior);
+	            }
+
+	            // 3. Buscar el nuevo horario
+	            Horario nuevoHorario = onHorario.findById(dto.getIdHorarioNuevo());
+	            if (nuevoHorario == null) {
+	                return Response.status(Response.Status.NOT_FOUND)
+	                    .entity("Horario no encontrado con id " + dto.getIdHorarioNuevo()).build();
+	            }
+
+	            // 4. Marcar nuevo horario como NO disponible
+	            nuevoHorario.setDisponible(false);
+	            onHorario.guardarHorario(nuevoHorario);
+
+	            // 5. Actualizar cita con nuevo horario y descripción
+	            cita.setHorario(nuevoHorario);
+	            cita.setDescripcion(dto.getDescripcion());
+	            onCitas.guardarCitasMedicas(cita);
+
+	            return Response.ok(cita).build();
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                .entity("Error al editar la cita").build();
+	        }
+	    }
+	    
+	    public static class CitaEdicionDTO {
+	        private int idHorarioNuevo;
+	        private String descripcion;
+
+	        public int getIdHorarioNuevo() { return idHorarioNuevo; }
+	        public void setIdHorarioNuevo(int idHorarioNuevo) { this.idHorarioNuevo = idHorarioNuevo; }
+
+	        public String getDescripcion() { return descripcion; }
+	        public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+	    }
+
+
 	    
 	    
 

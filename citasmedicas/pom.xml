@@ -150,6 +150,18 @@
         </dependency>
         
         <dependency>
+		    <groupId>jakarta.mail</groupId>
+		    <artifactId>jakarta.mail-api</artifactId>
+		    <version>2.1.2</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>com.twilio.sdk</groupId>
+		    <artifactId>twilio</artifactId>
+		    <version>8.31.1</version>
+		</dependency>  
+        
+        <dependency>
 		    <groupId>com.fasterxml.jackson.core</groupId>
 		    <artifactId>jackson-annotations</artifactId>
 		    <version>2.15.3</version> <!-- Puedes usar la más reciente -->

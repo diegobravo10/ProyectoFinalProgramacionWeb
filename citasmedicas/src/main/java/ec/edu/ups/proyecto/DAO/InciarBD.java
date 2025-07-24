@@ -62,11 +62,12 @@ public class InciarBD {
 		
 		Usuario persona  = new Usuario();
 		persona.setCedula("0151273012");
-		persona.setNombre("Luis");
-		persona.setApellido("Toledo");
+		persona.setNombre("Luis Diego");
+		persona.setApellido("Bravo Toledo");
 		persona.setDireccion("jUBONES");
-		persona.setCorreo("diego@gmail.com");
-		persona.setRol("admin");
+		persona.setCorreo("diegoalexanderbravovaldiviezo@gmail.com");
+		persona.setRol("paciente");
+		persona.setTelefono("0969997908");
 		
 		daoPersona.insert(persona);
 		
@@ -81,13 +82,13 @@ public class InciarBD {
         
         Horario horario = new Horario();
         horario.setFecha(new Date()); // Fecha actual
-        horario.setDisponible(true);
+        horario.setDisponible(false);
         horario.setDisponibilidad(disponibilidad);
 		
         daoHorario.insert(horario);
 		
 		CitasMedicas cita = new CitasMedicas();
-        cita.setEstado("confirmado");
+        cita.setEstado("pendiente");
         cita.setDescripcion("Chequeo general");
         cita.setDoctor(doc);
         cita.setPaciente(persona);

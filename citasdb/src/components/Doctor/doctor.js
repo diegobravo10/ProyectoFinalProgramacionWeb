@@ -29,6 +29,8 @@ const Doctor = () => {
   const [apellido, setApellido] = useState("");
   const [docId, setDocId] = useState("");
   const [pacientes, setPacientes] = useState([]);
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+
 
   // Cargar datos del usuario logeado
 useEffect(() => {
@@ -273,73 +275,70 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
 
   // Guardar edición de cita
   const guardarEdicion = async (idCita) => {
-    try {
-      setErrorValidacion("");
-      const citaActual = citas.find(c => c.id === idCita);
-      const horarioActual = horariosMap[citaActual.horarioid];
+  try {
+    setErrorValidacion("");
 
-      // Verifica que el horario exista
-      const horarioRef = doc(db, "horarios", citaActual.horarioid);
-      const horarioSnap = await getDoc(horarioRef);
-      if (!horarioSnap.exists()) {
-        setErrorValidacion("El horario asociado a esta cita no existe.");
-        return;
-      }
-
-      // Convertir la fechaHoraEdit a un objeto Date para validación
-      const nuevaFechaHoraObj = new Date(fechaHoraEdit);
-      if (isNaN(nuevaFechaHoraObj.getTime())) {
-        setErrorValidacion("Formato de fecha y hora inválido.");
-        return;
-      }
-
-      // Si la fecha y/o hora cambió, validar disponibilidad
-      if (fechaHoraEdit && timestampToDateTimeInput(horarioActual?.fecha) !== fechaHoraEdit) {
-        const storedId = localStorage.getItem("uid");
-        const validacion = await validarDisponibilidadHorario(
-          storedId,
-          fechaHoraEdit,
-          citaActual.horarioid
-        );
-
-        if (!validacion.disponible) {
-          setErrorValidacion(validacion.mensaje);
-          return;
-        }
-
-        // Actualizar la fecha y hora en la colección de horarios
-        await updateDoc(horarioRef, { fecha: nuevaFechaHoraObj });
-      }
-
-      // Actualizar la cita médica (descripción)
-      const citaRef = doc(db, "citasmedicas", idCita);
-      await updateDoc(citaRef, { descripcion: descripcionEdit });
-
-      // Actualizar estado local de horarios (si la fecha/hora cambió)
-      if (fechaHoraEdit && timestampToDateTimeInput(horarioActual?.fecha) !== fechaHoraEdit) {
-        setHorariosMap(prev => ({
-          ...prev,
-          [citaActual.horarioid]: {
-            ...prev[citaActual.horarioid],
-            fecha: nuevaFechaHoraObj
-          }
-        }));
-      }
-
-      // Actualizar estado local de citas (descripción)
-      setCitas(citas.map(c => c.id === idCita ? {
-        ...c,
-        descripcion: descripcionEdit
-      } : c));
-
-      setEditandoCitaId(null);
-      alert("Cita actualizada correctamente");
-
-    } catch (error) {
-      console.error("Error al guardar edición:", error);
-      setErrorValidacion("Error al actualizar la cita.");
+    if (!fechaHoraEdit) {
+      setErrorValidacion("Debe seleccionar un horario disponible.");
+      return;
     }
-  };
+
+    const body = {
+      idHorarioNuevo: fechaHoraEdit, // ID del horario seleccionado
+      descripcion: descripcionEdit
+    };
+     console.log("Enviando body para editar cita:", body); 
+
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al guardar la edición de la cita");
+    }
+
+    const citaActualizada = await response.json();
+
+    // Actualizar estado local de citas con la respuesta del backend
+    setCitas(prev =>
+      prev.map(c => c.id === idCita ? citaActualizada : c)
+    );
+
+    setEditandoCitaId(null);
+    alert("Cita actualizada correctamente");
+
+  } catch (error) {
+    console.error("Error al guardar edición:", error);
+    setErrorValidacion("Error al actualizar la cita.");
+  }
+};
+
+
+  const cargarHorarios = async (id) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${id}/horarios`
+    );
+    if (!response.ok) throw new Error("Error al cargar horarios");
+
+    const data = await response.json();
+
+    // Convertir fecha y filtrar por disponibilidad
+    const lista = data
+      .map(h => ({
+        ...h,
+        fecha: new Date(h.fecha)
+      }))
+      .filter(h => h.disponible === true);  // <-- Filtrado aquí
+
+    setHorariosDisponibles(lista);
+  } catch (error) {
+    console.error("Error al cargar horarios:", error);
+  }
+};
+
 
 
   return (
@@ -377,14 +376,23 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
                     <td>
                       {editandoCitaId === cita.id ? (
                         <div>
-                          <input
-                            type="datetime-local"
-                            value={fechaHoraEdit}
-                            onChange={e => {
-                              setFechaHoraEdit(e.target.value);
-                              setErrorValidacion("");
-                            }}
-                          />
+                          <select
+                              value={fechaHoraEdit}
+                              onChange={e => setFechaHoraEdit(e.target.value)}
+                            >
+                              <option value="">Seleccione un horario</option>
+                              {horariosDisponibles.map(h => (
+                                <option key={h.idHorario} value={h.idHorario}>
+                                  {new Date(h.fecha).toLocaleString()}
+                                </option>
+                              ))}
+                            </select>
+                            {errorValidacion && (
+                              <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                                {errorValidacion}
+                              </div>
+                            )}
+
                           {errorValidacion && (
                             <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
                               {errorValidacion}
@@ -434,8 +442,9 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
                           <button onClick={() => {
                             setEditandoCitaId(cita.id);
                             setDescripcionEdit(cita.descripcion || "");
-                            setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
+                            setFechaHoraEdit("");
                             setErrorValidacion("");
+                            cargarHorarios(localStorage.getItem("idUser"));
                           }}>Modificar</button>
 
                           <button onClick={() => actualizarEstadoCita(cita.id, "confirmado", horario?.idHorario)}>Confirmar</button>
