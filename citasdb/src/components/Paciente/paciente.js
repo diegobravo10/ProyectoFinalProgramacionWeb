@@ -24,6 +24,7 @@ const [shownAppointments, setShownAppointments] = useState(new Set());
 
 // Obtener el ID del paciente actual
 const currentPatientId = localStorage.getItem('uid');
+const PatientId = localStorage.getItem('id');
 
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -159,14 +160,21 @@ useEffect(() => {
 
 
   useEffect(() => {
-    const filtered = doctors.filter(doc =>
-  doc.especialidad?.nombre?.toLowerCase() === appointment.specialtyId?.toLowerCase());
-  
-  
-    setFilteredDoctors(filtered);
-    setAppointment(prev => ({ ...prev, doctorId: '', horarioId: '' }));
-    setAvailableSchedules([]);
-  }, [appointment.specialtyId, doctors]);
+  const filtered = doctors.filter(doc =>
+    doc.especialidad?.nombre?.toLowerCase() === appointment.specialtyId?.toLowerCase()
+  );
+
+  setFilteredDoctors(filtered);
+  setAppointment(prev => ({ ...prev, doctorId: '', horarioId: '' }));
+  setAvailableSchedules([]);
+}, [appointment.specialtyId, doctors]);
+
+// Función para manejar cambio de doctor
+const handleDoctorChange = (event) => {
+  const doctorId = event.target.value;
+  setAppointment(prev => ({ ...prev, doctorId, horarioId: '' }));
+  fetchAvailableSchedules(doctorId);
+};
 
   // Función para obtener horarios disponibles del doctor seleccionado
   
@@ -192,7 +200,7 @@ const fetchAvailableSchedules = async (doctorId) => {
 
     // Asegúrate que h.fecha es compatible con Date
     const horariosDisponibles = horarios.filter(h => isDateFuture(h.fecha));
-    setAvailableSchedules(horariosDisponibles);
+    setAvailableSchedules(horarios);
 
   } catch (error) {
     console.error("Error al obtener horarios disponibles:", error);
@@ -200,6 +208,8 @@ const fetchAvailableSchedules = async (doctorId) => {
   }
 };
 
+
+//funcion para obtener el id del paciente
 
 //Funcion para agendar la cita 
   const handleChange = (e) => {
@@ -211,22 +221,29 @@ const fetchAvailableSchedules = async (doctorId) => {
     }
   };
 
-  const onSubmit = async (e) => {
+ const onSubmit = async (e) => {
   e.preventDefault();
 
   try {
     const user = auth.currentUser;
     const token = user && await user.getIdToken();
+    console.log("User UID:", user?.uid);
 
     const citaData = {
-      pacienteid: currentPatientId,
-      doctorid: appointment.doctorId,
-      horarioid: appointment.horarioId,
+      paciente: {
+        idUser: PatientId
+      },
+      doctor: {
+        idUser: appointment.doctorId
+      },
+      horario: {
+        idHorario: appointment.horarioId
+      },
       descripcion: appointment.descripcion,
       estado: 'pendiente'
     };
-
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citasmedicas`, {
+    console.log("Cita enviada:", citaData);
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -239,6 +256,7 @@ const fetchAvailableSchedules = async (doctorId) => {
 
     alert('Cita médica agendada con éxito. Estado: Pendiente de confirmación.');
 
+    // Resetear el formulario
     setAppointment({
       specialtyId: '',
       doctorId: '',
@@ -252,6 +270,7 @@ const fetchAvailableSchedules = async (doctorId) => {
     alert('Error al agendar la cita. Intenta nuevamente.');
   }
 };
+
 
 
 
@@ -419,16 +438,12 @@ const fetchAvailableSchedules = async (doctorId) => {
 
         <div className="ajuste-form-group">
           <label>Médico:</label>
-          <select
-            required
-            name="doctorId"
-            value={appointment.doctorId}
-            onChange={handleChange}
-            disabled={!appointment.specialtyId}
-          >
-            <option value="">Selecciona un médico</option>
+          <select onChange={handleDoctorChange} value={appointment.doctorId || ''}>
+            <option value="">Seleccione un doctor</option>
             {filteredDoctors.map(doc => (
-              <option key={doc.id} value={doc.id}>{doc.nombre} {doc.apellido}</option>
+              <option key={doc.idUser} value={doc.idUser}>
+                {doc.nombre} {doc.apellido}
+              </option>
             ))}
           </select>
         </div>
