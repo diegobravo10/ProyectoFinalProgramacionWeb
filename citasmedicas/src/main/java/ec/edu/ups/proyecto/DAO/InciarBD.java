@@ -67,6 +67,7 @@ public class InciarBD {
 		persona.setDireccion("jUBONES");
 		persona.setCorreo("diegoalexanderbravovaldiviezo@gmail.com");
 		persona.setRol("paciente");
+		persona.setUid("YBMpPr75LkhP5Id078IjQOZhBZF3");
 		persona.setTelefono("0969997908");
 		
 		daoPersona.insert(persona);

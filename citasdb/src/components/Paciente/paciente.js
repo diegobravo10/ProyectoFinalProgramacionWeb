@@ -24,7 +24,7 @@ const [shownAppointments, setShownAppointments] = useState(new Set());
 
 // Obtener el ID del paciente actual
 const currentPatientId = localStorage.getItem('uid');
-const PatientId = localStorage.getItem('id');
+const PatientId = localStorage.getItem('idUser');
 
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -198,15 +198,19 @@ const fetchAvailableSchedules = async (doctorId) => {
 
     const horarios = await res.json();
 
-    // Asegúrate que h.fecha es compatible con Date
-    const horariosDisponibles = horarios.filter(h => isDateFuture(h.fecha));
-    setAvailableSchedules(horarios);
+    // Filtrar por fecha futura y que estén disponibles
+    const horariosDisponibles = horarios.filter(h => 
+      isDateFuture(h.fecha) && h.disponible === true
+    );
+
+    setAvailableSchedules(horariosDisponibles);
 
   } catch (error) {
     console.error("Error al obtener horarios disponibles:", error);
     setAvailableSchedules([]);
   }
 };
+
 
 
 //funcion para obtener el id del paciente
@@ -459,9 +463,10 @@ const fetchAvailableSchedules = async (doctorId) => {
           >
             <option value="">Selecciona un horario</option>
             {availableSchedules.map((horario) => (
-              <option key={horario.id} value={horario.id}>
+              <option key={horario.idHorario} value={horario.idHorario}>
                 {formatDate(horario.fecha)}
               </option>
+
             ))}
           </select>
         </div>

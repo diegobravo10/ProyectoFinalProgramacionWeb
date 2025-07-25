@@ -38,7 +38,7 @@ const Login = () => {
 
       // Guardar info en localStorage si quieres
       localStorage.setItem('uid', user.uid);
-      localStorage.setItem('id', user.idUsuario);
+      localStorage.setItem('idUser', userData.idUser);
 
     } else {
       alert('Token inválido o sesión no autorizada');
