@@ -32,6 +32,8 @@ const Doctor = () => {
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
    const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [todasCitas, setTodasCitas] = useState([]);
 
 
   // Cargar datos del usuario logeado
@@ -53,6 +55,10 @@ useEffect(() => {
     cargarDatos();
   }
 }, []);
+
+
+
+
 
 
   // Función helper para convertir Timestamp a string (Fecha y Hora)
@@ -95,32 +101,6 @@ useEffect(() => {
     return "";
   };
 
-  // Función helper para convertir Timestamp a formato YYYY-MM-DDTHH:MM para input 
-  const timestampToDateTimeInput = (timestamp) => {
-    if (!timestamp) return "";
-
-    let date;
-    if (typeof timestamp === 'string') {
-      date = new Date(timestamp);
-    } else if (timestamp && timestamp.seconds) {
-      date = new Date(timestamp.seconds * 1000);
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      return "";
-    }
-
-    if (isNaN(date.getTime())) return "";
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
   // Cargar pacientes 
   useEffect(() => {
     const cargarPacientes = async () => {
@@ -161,46 +141,46 @@ useEffect(() => {
 
 
 
-useEffect(() => {
+// 1. Definir cargarCitas fuera del useEffect
+const cargarCitas = async () => {
   const storedId = localStorage.getItem("uid");
   if (!storedId) return;
 
-  const cargarCitas = async () => {
-    try {
-      const response = await axios.get(`http://localhost:8080/citasmedicas/citasmedicas/citas/doctor/${storedId}/conDetalles`);
-      const citasConDetalles = response.data;
+  try {
+    const response = await axios.get(
+      `http://localhost:8080/citasmedicas/citasmedicas/citas/doctor/${storedId}/conDetalles`
+    );
+    const citasConDetalles = response.data;
 
-      // Separar citas, pacientes y horarios
-      setCitas(citasConDetalles);
+    setTodasCitas(Array.isArray(citasConDetalles) ? citasConDetalles : []);
+    setCitas(Array.isArray(citasConDetalles) ? citasConDetalles : []);
 
-      // Mapear pacientes
-      const pacientesMap = {};
-      citasConDetalles.forEach(cita => {
-        if (cita.paciente) {
-          pacientesMap[cita.paciente.idUser] = cita.paciente;
-        }
-      });
-      setPacientesMap(pacientesMap);
+    const pacientesMap = {};
+    citasConDetalles.forEach((cita) => {
+      if (cita.paciente) {
+        pacientesMap[cita.paciente.idUser] = cita.paciente;
+      }
+    });
+    setPacientesMap(pacientesMap);
 
-      // Mapear horarios
-      const horariosMap = {};
-      citasConDetalles.forEach(cita => {
-        if (cita.horario) {
-          horariosMap[cita.horario.idHorario] = cita.horario;
-        }
-      });
-      setHorariosMap(horariosMap);
+    const horariosMap = {};
+    citasConDetalles.forEach((cita) => {
+      if (cita.horario) {
+        horariosMap[cita.horario.idHorario] = cita.horario;
+      }
+    });
+    setHorariosMap(horariosMap);
+  } catch (error) {
+    console.error("Error al obtener citas del doctor:", error);
+  }
+};
 
-    } catch (error) {
-      console.error("Error al obtener citas del doctor:", error);
-    }
-  };
-
+// 2. Usar useEffect para cargar las citas al montar
+useEffect(() => {
   cargarCitas();
 }, []);
 
-
-  // Actualizar estado de cita
+// 3. Modificar actualizarEstadoCita para llamar a cargarCitas después
 const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
   try {
     const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
@@ -218,10 +198,8 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
       throw new Error("Error actualizando estado de la cita");
     }
 
-    // Actualizar localmente el estado en React
-    setCitas(citas.map(c =>
-      c.id === idCita ? { ...c, estado: nuevoEstado } : c
-    ));
+    // Luego de actualizar en backend, recarga las citas desde el servidor
+    await cargarCitas();
 
   } catch (error) {
     console.error("Error al actualizar estado de cita:", error);
@@ -229,51 +207,19 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
 };
 
 
-  // Validar disponibilidad de horario (ahora con fecha y hora)
-  const validarDisponibilidadHorario = async (doctorId, nuevaFechaHora, horarioIdAExcluir = null) => {
-    try {
-      setCargandoValidacion(true);
-      setErrorValidacion("");
 
-    
-      const fechaHoraObjetivo = new Date(nuevaFechaHora);
-      if (isNaN(fechaHoraObjetivo.getTime())) {
-        return { disponible: false, mensaje: "Formato de fecha y hora inválido." };
-      }
+useEffect(() => {
+  if (filtroEstado === "TODOS") {
+    setCitas(todasCitas);
+  } else {
+    setCitas(todasCitas.filter(cita => cita.estado === filtroEstado));
+  }
+}, [filtroEstado, todasCitas]);
 
-      
-      if (fechaHoraObjetivo < new Date()) {
-        return { disponible: false, mensaje: "La fecha y hora de la cita no pueden ser en el pasado." };
-      }
 
-      const horariosQuery = query(
-        collection(db, "horarios"),
-        where("doctorid", "==", doctorId),
-        where("fecha", "==", fechaHoraObjetivo) 
-      );
+ 
 
-      const horariosSnapshot = await getDocs(horariosQuery);
 
-      // Si encuentra horarios en esa fecha y hora
-      if (!horariosSnapshot.empty) {
-        const horariosOcupados = horariosSnapshot.docs.filter(docSnap => {
-          const horario = docSnap.data();
-          return docSnap.id !== horarioIdAExcluir && horario.estado === "ocupado";
-        });
-
-        if (horariosOcupados.length > 0) {
-          return { disponible: false, mensaje: "El doctor ya tiene una cita programada a esa fecha y hora." };
-        }
-      }
-
-      return { disponible: true, mensaje: "" };
-    } catch (error) {
-      console.error("Error al validar disponibilidad:", error);
-      return { disponible: false, mensaje: "Error al validar disponibilidad." };
-    } finally {
-      setCargandoValidacion(false);
-    }
-  };
 
   // Guardar edición de cita
   const guardarEdicion = async (idCita) => {
@@ -389,10 +335,7 @@ const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
     <div>
       
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          
-          <div>
 
-          </div>
           <h1>
             Hola, {nombre.split(" ")[0]} {apellido.split(" ")[0]} 
           </h1>
@@ -457,8 +400,38 @@ const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
         </div>
 
         <hr />
+        <div style={{ position: "relative", height: 40 }}>
+          <h2
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              margin: 0,
+            }}
+          >
+            Citas
+          </h2>
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            style={{
+              position: "absolute",
+              right: 20, // espacio a la derecha de la pantalla
+              top: "50%",
+              transform: "translateY(-50%)",
+              padding: "5px 10px",
+              borderRadius: "5px",
+            }}
+          >
+            <option value="TODOS">Todas</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="confirmado">Confirmadas</option>
+            <option value="rechazado">Rechazadas</option>
+          </select>
+        </div>
 
-      <h2>Citas</h2>
+
       <table>
         <thead>
           <tr>

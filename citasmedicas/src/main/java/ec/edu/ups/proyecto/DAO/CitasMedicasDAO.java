@@ -84,6 +84,13 @@ public class CitasMedicasDAO {
 	             .setParameter("hasta", hasta)
 	             .getResultList();
 	}
+	
+	public List<CitasMedicas> findByState(String estado) {
+	    String jpql = "SELECT c FROM CitasMedicas c WHERE c.estado = :estado";
+	    return em.createQuery(jpql, CitasMedicas.class)
+	             .setParameter("estado", estado)
+	             .getResultList();
+	}
 
 
 

@@ -75,6 +75,12 @@ public class CitasMedicasON {
 		
 		return daoCM.obtenerCitasPendientesDeRecordatorio(horasDesde, horasHasta, flag);
 	}
+	
+	public List<CitasMedicas> listarPorEstado(String estado){
+			
+			return daoCM.findByState(estado);
+		}
+	
 
 	
 

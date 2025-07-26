@@ -3,6 +3,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, provider, db } from "../servicios/firebase.js";
 import { Timestamp } from "firebase/firestore";
 import './Ajuste.css';
+import { onAuthStateChanged } from "firebase/auth";
 
 const Perfil = () => {
   const [docId, setDocId] = useState("");
@@ -15,49 +16,51 @@ const Perfil = () => {
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [rol, setRol] = useState("");
 
-  useEffect(() => {
-  const cargarDatos = async () => {
-    try {
-      const user = auth.currentUser;
-      const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
-        headers: {
-          'Authorization': 'Bearer ' + token
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const token = await user.getIdToken();
+
+      try {
+        const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!res.ok) {
+          console.warn("No se pudo obtener el usuario");
+          return;
         }
-      });
 
-      if (!res.ok) {
-        console.warn("No se pudo obtener el usuario");
-        return;
+        const datos = await res.json();
+
+        setCorreo(datos.email || "");
+        setNombre(datos.nombre || "");
+        setApellido(datos.apellido || "");
+        setCedula(datos.cedula || "");
+        setDireccion(datos.direccion || "");
+        setTelefono(datos.telefono || "");
+        setRol(datos.rol);
+
+        if (datos.fechaNacimiento) {
+          const fecha = new Date(datos.fechaNacimiento);
+          const yyyy = fecha.getFullYear();
+          const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dd = String(fecha.getDate()).padStart(2, '0');
+          setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
+        }
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
       }
-
-      const datos = await res.json();
-
-      // Seteamos los campos
-      setCorreo(datos.email || "");
-      setNombre(datos.nombre || "");
-      setApellido(datos.apellido || "");
-      setCedula(datos.cedula || "");   // si tu backend devuelve cédula
-      setDireccion(datos.direccion || ""); // solo si se incluye
-      setTelefono(datos.telefono || ""); 
-      setRol(datos.rol);// solo si se incluye
-
-      // Si incluyes fechaNacimiento en el backend, puedes agregarlo así:
-      if (datos.fechaNacimiento) {
-        const fecha = new Date(datos.fechaNacimiento);
-        const yyyy = fecha.getFullYear();
-        const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-        const dd = String(fecha.getDate()).padStart(2, '0');
-        setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
-      }
-
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
+    } else {
+      console.log("No hay usuario autenticado");
     }
-  };
+  });
 
-  cargarDatos();
+  return () => unsubscribe(); // limpiar listener
 }, []);
 
 //Funcion para guardar los datos modificados

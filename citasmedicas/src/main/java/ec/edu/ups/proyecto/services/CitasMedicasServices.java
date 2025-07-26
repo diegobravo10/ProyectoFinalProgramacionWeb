@@ -286,6 +286,31 @@ public class CitasMedicasServices {
 	        public String getDescripcion() { return descripcion; }
 	        public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 	    }
+	    
+	    
+	    @GET
+	    @Path("/estado/{estado}")
+	    @Produces(MediaType.APPLICATION_JSON)
+	    public Response getCitasPorEstado(@PathParam("estado") String estado) {
+	        try {
+	            List<CitasMedicas> citas = onCitas.listarPorEstado(estado);
+
+	            if (citas == null || citas.isEmpty()) {
+	                return Response.status(Response.Status.NOT_FOUND)
+	                               .entity("No hay citas con el estado: " + estado)
+	                               .build();
+	            }
+
+	            return Response.ok(citas).build();
+
+	        } catch (Exception e) {
+	            e.printStackTrace(); // O usa un logger
+	            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                           .entity("Error al obtener las citas: " + e.getMessage())
+	                           .build();
+	        }
+	    }
+
 
 
 	    
