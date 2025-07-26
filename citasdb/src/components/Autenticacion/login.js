@@ -39,6 +39,7 @@ const Login = () => {
       // Guardar info en localStorage si quieres
       localStorage.setItem('uid', user.uid);
       localStorage.setItem('idUser', userData.idUser);
+      localStorage.setItem("cedula", userData.cedula || "");
 
     } else {
       alert('No se encuentra registrado, por favor llenar el siguiente formulario');

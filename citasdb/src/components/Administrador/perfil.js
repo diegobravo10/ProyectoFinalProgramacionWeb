@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "../servicios/firebase";
+import { auth, provider, db } from "../servicios/firebase.js";
 import { Timestamp } from "firebase/firestore";
 
 import './Ajuste.css';
@@ -17,47 +17,47 @@ const PerfilD = () => {
 
 
   useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
-
-         
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setCorreo(datos.correo || "");
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
-            setCedula(datos.cedula || "");
-            setDireccion(datos.direccion || "");
-            setTelefono(datos.telefono || "");
-
-            console.log("fechaNacimiento recuperada:", datos.fechaNacimiento);
-
-            if (datos.fechaNacimiento && datos.fechaNacimiento.toDate) {
-                    const fecha = datos.fechaNacimiento.toDate();
-                    const yyyy = fecha.getFullYear();
-                    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-                    const dd = String(fecha.getDate()).padStart(2, '0');
-                    setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
-            } else {
-                    setFechaNacimiento("");
-            }
-
-
-          } else {
-            console.warn("No se encontró el usuario");
+    const cargarDatos = async () => {
+      try {
+        const user = auth.currentUser;
+        const token = user && await user.getIdToken();
+  
+        const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+          headers: {
+            'Authorization': 'Bearer ' + token
           }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
+        });
+  
+        if (!res.ok) {
+          console.warn("No se pudo obtener el usuario");
+          return;
         }
-      };
-
-      cargarDatos();
-    }
+  
+        const datos = await res.json();
+  
+        // Seteamos los campos
+        setCorreo(datos.email || "");
+        setNombre(datos.nombre || "");
+        setApellido(datos.apellido || "");
+        setCedula(datos.cedula || "");   // si tu backend devuelve cédula
+        setDireccion(datos.direccion || ""); // solo si se incluye
+        setTelefono(datos.telefono || "");   // solo si se incluye
+  
+        // Si incluyes fechaNacimiento en el backend, puedes agregarlo así:
+        if (datos.fechaNacimiento) {
+          const fecha = new Date(datos.fechaNacimiento);
+          const yyyy = fecha.getFullYear();
+          const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dd = String(fecha.getDate()).padStart(2, '0');
+          setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
+        }
+  
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+      }
+    };
+  
+    cargarDatos();
   }, []);
 
 
@@ -79,30 +79,46 @@ useEffect(() => {
 }, []);
 
 
-const handleGuardar = async () => {
-  if (!docId) return;
+//Funcion para guardar los datos modificados
+  const handleGuardar = async () => {
+    const user = auth.currentUser;
+    const token = user && await user.getIdToken();
 
+    if (!token) {
+    alert("UID no disponible");
+    return;
+  }
   try {
-    const userRef = doc(db, "users", docId);
-
-    const fechaComoTimestamp = fechaNacimiento
-    ? Timestamp.fromDate(new Date(fechaNacimiento + "T12:00:00"))  
-    : null;
-
-
-    await updateDoc(userRef, {
+    
+    const payload = {
+      correo,
       nombre,
       apellido,
       cedula,
       direccion,
       telefono,
-      fechaNacimiento: fechaComoTimestamp,
+      fechaNacimiento, // puedes enviar como string ISO: "2025-07-19"
+    };
+
+    const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
     });
 
-    alert("Datos actualizados correctamente");
+    const result = await res.json();
+
+    if (res.ok) {
+      alert("Datos actualizados correctamente.");
+    } else {
+      console.error(result);
+      alert("Error: " + result.message || "No se pudo actualizar.");
+    }
   } catch (error) {
-    console.error("Error al guardar:", error);
-    alert("Ocurrió un error al guardar los cambios.");
+    console.error("Error al actualizar:", error);
+    alert("Error al guardar los cambios.");
   }
 };
 

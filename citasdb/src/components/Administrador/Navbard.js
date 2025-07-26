@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
-import { db } from "../servicios/firebase";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 import "../Paciente/Navbar.css";
 
 const NavbarA = () => {
@@ -26,26 +26,34 @@ const NavbarA = () => {
   };
 
   useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
+    const auth = getAuth();
+  
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
         try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
-          } else {
-            console.warn("No se encontró el usuario");
+          const token = await user.getIdToken();
+  
+          const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          });
+  
+          if (!res.ok) {
+            throw new Error("No se pudo obtener los datos del usuario");
           }
+  
+          const data = await res.json();
+  
+          setNombre(data.nombre || "");
+          setApellido(data.apellido || "");
         } catch (error) {
-          console.error("Error al obtener datos:", error);
+          console.error("Error al obtener datos del usuario:", error);
         }
-      };
-      cargarDatos();
-    }
+      }
+    });
+  
+    return () => unsubscribe();
   }, []);
 
   return (

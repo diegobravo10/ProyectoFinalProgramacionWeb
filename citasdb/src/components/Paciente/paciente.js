@@ -25,6 +25,7 @@ const [shownAppointments, setShownAppointments] = useState(new Set());
 // Obtener el ID del paciente actual
 const currentPatientId = localStorage.getItem('uid');
 const PatientId = localStorage.getItem('idUser');
+const cedulaP = localStorage.getItem('cedula');
 
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -79,7 +80,7 @@ useEffect(() => {
       }
 
       // Obtener citas médicas del paciente
-      const citasRes = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/paciente/${currentPatientId}`, {
+      const citasRes = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/paciente/${cedulaP}`, {
         headers: {
           'Authorization': 'Bearer ' + token
         }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where, updateDoc, doc, getDoc, addDoc, onSnapshot } from "firebase/firestore";
-import { db } from "../servicios/firebase.js";
+import { auth, provider, db } from "../servicios/firebase.js";
 
 import './doctor.css'
 
@@ -25,6 +25,7 @@ const Admin = () => {
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [docId, setDocId] = useState("");
+  const [cedula, setCedula] = useState("");
 
   const [doctores, setDoctores] = useState([]);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
@@ -32,278 +33,216 @@ const Admin = () => {
 
   // Cargar datos del usuario logeado
   useEffect(() => {
-    const storedId = localStorage.getItem("uid");
-    if (storedId) {
-      setDocId(storedId);
-      const cargarDatos = async () => {
-        try {
-          const userRef = doc(db, "users", storedId);
-          const docSnap = await getDoc(userRef);
+  const cargarDatosDesdeBackend = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
 
-          if (docSnap.exists()) {
-            const datos = docSnap.data();
-            setNombre(datos.nombre || "");
-            setApellido(datos.apellido || "");
-          } else {
-            console.warn("No se encontró el usuario");
-          }
-        } catch (error) {
-          console.error("Error al obtener datos:", error);
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+        headers: {
+          'Authorization': 'Bearer ' + token
         }
-      };
-      cargarDatos();
+      });
+
+      if (!res.ok) throw new Error("No se pudo obtener el usuario");
+
+      const datos = await res.json();
+
+      // Guardar en estado
+      setNombre(datos.nombre || "");
+      setApellido(datos.apellido || "");
+      setCedula(datos.cedula || "");
+      setDocId(datos.idUser); // o setCurrentPatientId si lo estás usando
+
+      // Guardar en localStorage si deseas persistir
+      localStorage.setItem("nombre", datos.nombre || "");
+      localStorage.setItem("apellido", datos.apellido || "");
+      localStorage.setItem("cedula", datos.cedula || "");
+      localStorage.setItem("idUser", datos.idUser);
+      localStorage.setItem("rol", datos.rol);
+
+    } catch (error) {
+      console.error("Error al obtener datos del backend:", error);
     }
-  }, []);
+  };
+
+  cargarDatosDesdeBackend();
+}, []);
+
 
   // Función helper para convertir Timestamp a string (Fecha y Hora)
-  const formatearFecha = (timestamp) => {
-    if (!timestamp) return "";
+  const formatearFecha = (fechaStr) => {
+  if (!fechaStr) return "";
 
-    if (typeof timestamp === 'string') {
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return "";
-      return date.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
+  const date = new Date(fechaStr);
 
-    if (timestamp && timestamp.seconds) {
-      const fecha = new Date(timestamp.seconds * 1000);
-      return fecha.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
+  if (isNaN(date.getTime())) return "";
 
-    if (timestamp instanceof Date) {
-      return timestamp.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-    return "";
-  };
+  return date.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 
   // Función helper para convertir Timestamp a formato YYYY-MM-DDTHH:MM para input datetime-local
-  const timestampToDateTimeInput = (timestamp) => {
-    if (!timestamp) return "";
+  const timestampToDateTimeInput = (fechaStr) => {
+  if (!fechaStr) return "";
 
-    let date;
-    if (typeof timestamp === 'string') {
-      date = new Date(timestamp);
-    } else if (timestamp && timestamp.seconds) {
-      date = new Date(timestamp.seconds * 1000);
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      return "";
-    }
+  const date = new Date(fechaStr);
+  if (isNaN(date.getTime())) return "";
 
-    if (isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
 
   // Cargar todas las especialidades
   useEffect(() => {
-    const cargarEspecialidades = async () => {
-      const snapshot = await getDocs(collection(db, "especialidad"));
-      const especialidadesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setEspecialidades(especialidadesData);
-      
-      // Crear mapa de especialidades para búsqueda rápida
+  const cargarEspecialidades = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
+
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades", {
+        headers: {
+          'Authorization': 'Bearer ' + token // si tu backend requiere autenticación
+        }
+      });
+
+      if (!res.ok) throw new Error("Error al obtener especialidades");
+
+      const especialidadesData = await res.json();
+
+      // Estructura: [{ idEspecialidad: 1, nombre: "Odontología" }, ...]
+      const formattedEspecialidades = especialidadesData.map(e => ({
+        id: e.idEspecialidad,
+        nombre: e.nombre
+      }));
+
+      setEspecialidades(formattedEspecialidades);
+
+      // Mapa de búsqueda rápida
       const especialidadesMap = {};
-      especialidadesData.forEach(esp => {
+      formattedEspecialidades.forEach(esp => {
         especialidadesMap[esp.id] = esp;
       });
       setEspecialidadesMap(especialidadesMap);
-    };
-    cargarEspecialidades();
-  }, []);
+
+    } catch (error) {
+      console.error("Error cargando especialidades:", error);
+    }
+  };
+
+  cargarEspecialidades();
+}, []);
+
 
   // Cargar todos los doctores
   useEffect(() => {
-    const cargarDoctores = async () => {
-      const q = query(collection(db, "users"), where("rol", "==", "doctor"));
-      const snapshot = await getDocs(q);
-      const doctoresData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setDoctores(doctoresData);
-    };
-    cargarDoctores();
-  }, []);
+  const cargarDoctores = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
 
-  
-  useEffect(() => {
-    const cargarPacientes = async () => {
-      const q = query(collection(db, "users"), where("rol", "==", "paciente"));
-      const snapshot = await getDocs(q);
-      const pacientesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      // Crear mapa de pacientes para búsqueda rápida
-      const pacientesMap = {};
-      pacientesData.forEach(paciente => {
-        pacientesMap[paciente.id] = paciente;
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+        headers: {
+          'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
+        }
       });
-      setPacientesMap(pacientesMap);
-    };
-    cargarPacientes();
-  }, []);
+
+      if (!res.ok) throw new Error("Error al obtener doctores");
+
+      const doctoresData = await res.json();
+
+      // Estructura: [{ idUser, nombre, apellido, especialidad: { idEspecialidad, nombre }, ... }]
+      const formatted = doctoresData.map(doc => ({
+        ...doc,
+        id: doc.idUser // para mantener consistencia si lo usas así
+      }));
+
+      setDoctores(formatted);
+
+    } catch (error) {
+      console.error("Error cargando doctores:", error);
+    }
+  };
+
+  cargarDoctores();
+}, []);
+
 
   // Cargar todas las citas con sus datos relacionados
   useEffect(() => {
-    const cargarTodasLasCitas = async () => {
-      try {
-        // Cargar todas las citas
-        const citasSnapshot = await getDocs(collection(db, "citasmedicas"));
-        const citasData = citasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCitas(citasData);
+  const cargarTodasLasCitas = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
 
-        // Extraer ids únicos
-        const pacienteIds = [...new Set(citasData.map(c => c.pacienteid))];
-        const horarioIds = [...new Set(citasData.map(c => c.horarioid))];
-        const doctorIds = [...new Set(citasData.map(c => c.doctorid))];
-
-        // Cargar pacientes (optimizado - solo los necesarios)
-        if (pacienteIds.length > 0) {
-          const pacientesPromises = pacienteIds.map(id => getDoc(doc(db, "users", id)));
-          const pacientesDocs = await Promise.all(pacientesPromises);
-          const pacientesMapTemp = {};
-          pacientesDocs.forEach(docSnap => {
-            if (docSnap.exists()) {
-              pacientesMapTemp[docSnap.id] = docSnap.data();
-            }
-          });
-          // Combinar con pacientes ya cargados
-          setPacientesMap(prev => ({ ...prev, ...pacientesMapTemp }));
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/citas", {
+        headers: {
+          'Authorization': 'Bearer ' + token // si tu backend lo requiere
         }
+      });
 
-        // Cargar horarios
-        if (horarioIds.length > 0) {
-          const horariosPromises = horarioIds.map(id => getDoc(doc(db, "horarios", id)));
-          const horariosDocs = await Promise.all(horariosPromises);
-          const horariosMap = {};
-          horariosDocs.forEach(docSnap => {
-            if (docSnap.exists()) {
-              horariosMap[docSnap.id] = docSnap.data();
-            }
-          });
-          setHorariosMap(horariosMap);
-        }
+      if (!res.ok) throw new Error("No se pudieron obtener las citas");
 
-        // Cargar doctores
-        if (doctorIds.length > 0) {
-          const doctoresPromises = doctorIds.map(id => getDoc(doc(db, "users", id)));
-          const doctoresDocs = await Promise.all(doctoresPromises);
-          const doctoresMap = {};
-          doctoresDocs.forEach(docSnap => {
-            if (docSnap.exists()) {
-              doctoresMap[docSnap.id] = docSnap.data();
-            }
-          });
-          setDoctoresMap(doctoresMap);
-        }
+      const citas = await res.json();
 
-      } catch (error) {
-        console.error("Error al cargar las citas:", error);
-      }
-    };
+      // Si cada cita ya trae paciente, horario y doctor:
+      setCitas(citas);
 
-    cargarTodasLasCitas();
-  }, []);
+    } catch (error) {
+      console.error("Error al cargar las citas:", error);
+    }
+  };
 
-  // Suscripción en tiempo real a la colección de citas
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "citasmedicas"), async (citasSnapshot) => {
-      const citasData = citasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCitas(citasData);
+  cargarTodasLasCitas();
+}, []);
 
-      // Extraer ids únicos
-      const pacienteIds = [...new Set(citasData.map(c => c.pacienteid))];
-      const horarioIds = [...new Set(citasData.map(c => c.horarioid))];
-      const doctorIds = [...new Set(citasData.map(c => c.doctorid))];
 
-      // Cargar pacientes (optimizado - solo los necesarios)
-      if (pacienteIds.length > 0) {
-        const pacientesPromises = pacienteIds.map(id => getDoc(doc(db, "users", id)));
-        const pacientesDocs = await Promise.all(pacientesPromises);
-        const pacientesMapTemp = {};
-        pacientesDocs.forEach(docSnap => {
-          if (docSnap.exists()) {
-            pacientesMapTemp[docSnap.id] = docSnap.data();
-          }
-        });
-        setPacientesMap(prev => ({ ...prev, ...pacientesMapTemp }));
-      }
 
-      // Cargar horarios
-      if (horarioIds.length > 0) {
-        const horariosPromises = horarioIds.map(id => getDoc(doc(db, "horarios", id)));
-        const horariosDocs = await Promise.all(horariosPromises);
-        const horariosMap = {};
-        horariosDocs.forEach(docSnap => {
-          if (docSnap.exists()) {
-            horariosMap[docSnap.id] = docSnap.data();
-          }
-        });
-        setHorariosMap(horariosMap);
-      }
-
-      // Cargar doctores
-      if (doctorIds.length > 0) {
-        const doctoresPromises = doctorIds.map(id => getDoc(doc(db, "users", id)));
-        const doctoresDocs = await Promise.all(doctoresPromises);
-        const doctoresMap = {};
-        doctoresDocs.forEach(docSnap => {
-          if (docSnap.exists()) {
-            doctoresMap[docSnap.id] = docSnap.data();
-          }
-        });
-        setDoctoresMap(doctoresMap);
-      }
-    });
-
-    // Limpia el listener al desmontar el componente
-    return () => unsubscribe();
-  }, []);
 
   // Actualizar estado de cita
 const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
   try {
-    const citaRef = doc(db, "citasmedicas", idCita);
-    const horarioRef = doc(db, "horarios", idHorario);
+    const user = auth.currentUser;
+    const token = user && await user.getIdToken();
 
-    // Actualiza el estado de la cita
-    await updateDoc(citaRef, { estado: nuevoEstado });
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        nuevoEstado,
+        idHorario
+      })
+    });
 
-    // Actualiza la disponibilidad del horario según el estado
-    const disponibilidad = (nuevoEstado.toLowerCase() === "rechazado");  // true si es rechazada, false en otros casos
-    await updateDoc(horarioRef, { disponibilidad });
+    if (!response.ok) throw new Error("Error al actualizar estado de la cita");
 
-    // Actualiza el estado local de las citas
-    setCitas(citas.map(c => 
-      c.id === idCita ? { ...c, estado: nuevoEstado } : c
-    ));
+    // Actualizar estado local
+    setCitas(prevCitas => 
+      prevCitas.map(c => c.idCita === idCita ? { ...c, estado: nuevoEstado } : c)
+    );
+
+    console.log("Cita actualizada correctamente");
 
   } catch (error) {
-    console.error("Error al actualizar cita o disponibilidad del horario:", error);
+    console.error("Error al actualizar cita:", error);
   }
 };
+
 
 
 
@@ -352,81 +291,106 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
 
   // Guardar edición de cita
   const guardarEdicion = async (idCita) => {
-    try {
-      setErrorValidacion("");
-      const citaActual = citas.find(c => c.id === idCita);
-      const horarioActual = horariosMap[citaActual.horarioid];
+  try {
+    setErrorValidacion("");
+    const citaActual = citas.find(c => c.idCita === idCita);
+console.log("Cita actual:", citaActual);
+console.log("Horario en cita:", citaActual?.horario);
+  if (!citaActual || !citaActual.horario) {
+    console.error("No se encontró cita u horario");
+    setErrorValidacion("Error: cita u horario no definidos.");
+    return;
+  }
+console.log("Cita actual:", citaActual);
+console.log("Horario en cita:", citaActual?.horario);
+const horarioActual = citaActual.horario;
+    const nuevaFechaHoraObj = new Date(fechaHoraEdit);
+    if (isNaN(nuevaFechaHoraObj.getTime())) {
+      setErrorValidacion("Formato de fecha y hora inválido.");
+      return;
+    }
 
-      const nuevaFechaHoraObj = new Date(fechaHoraEdit);
-      if (isNaN(nuevaFechaHoraObj.getTime())) {
-        setErrorValidacion("Formato de fecha y hora inválido.");
+    const fechaActualInput = timestampToDateTimeInput(horarioActual?.fecha);
+    if (fechaHoraEdit && fechaHoraEdit !== fechaActualInput) {
+      // Validar disponibilidad
+      const validacion = await validarDisponibilidadHorario(
+        citaActual.doctor.idUser,
+        fechaHoraEdit,
+        citaActual.horario.idHorario
+      );
+
+      if (!validacion.disponible) {
+        setErrorValidacion(validacion.mensaje);
         return;
       }
-
-      if (fechaHoraEdit && timestampToDateTimeInput(horarioActual?.fecha) !== fechaHoraEdit) {
-        const validacion = await validarDisponibilidadHorario(
-          citaActual.doctorid,
-          fechaHoraEdit,
-          citaActual.horarioid
-        );
-
-        if (!validacion.disponible) {
-          setErrorValidacion(validacion.mensaje);
-          return;
-        }
-
-        const horarioRef = doc(db, "horarios", citaActual.horarioid);
-        await updateDoc(horarioRef, { fecha: nuevaFechaHoraObj });
-      }
-
-      const citaRef = doc(db, "citasmedicas", idCita);
-      await updateDoc(citaRef, { descripcion: descripcionEdit });
-
-      if (fechaHoraEdit && timestampToDateTimeInput(horarioActual?.fecha) !== fechaHoraEdit) {
-        setHorariosMap(prev => ({
-          ...prev,
-          [citaActual.horarioid]: {
-            ...prev[citaActual.horarioid],
-            fecha: nuevaFechaHoraObj
-          }
-        }));
-      }
-
-      setCitas(citas.map(c => c.id === idCita ? {
-        ...c,
-        descripcion: descripcionEdit
-      } : c));
-
-      setEditandoCitaId(null);
-
-    } catch (error) {
-      console.error("Error al guardar edición:", error);
-      setErrorValidacion("Error al actualizar la cita.");
     }
-  };
+
+    // Convertir fecha a formato ISO para backend (si necesitas enviar la fecha)
+    // Si solo estás enviando el id del nuevo horario, este paso no es necesario.
+
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        idHorarioNuevo: citaActual.horario.idHorario,
+        descripcion: descripcionEdit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al actualizar la cita");
+    }
+
+    const citaActualizada = await response.json();
+
+    // Actualizar estados locales
+    setCitas(citas.map(c =>
+      c.id === idCita ? {
+        ...c,
+        descripcion: descripcionEdit,
+        horario: {
+          ...citaActual.horario,
+          fecha: nuevaFechaHoraObj
+        }
+      } : c
+    ));
+
+    setEditandoCitaId(null);
+
+  } catch (error) {
+    console.error("Error al guardar edición:", error);
+    setErrorValidacion("Error al actualizar la cita.");
+  }
+};
+
 
 
   // Filtrar doctores por especialidad seleccionada
-  const doctoresFiltrados = especialidadSeleccionada 
-    ? doctores.filter(d => d.especialidadid === especialidadSeleccionada)
-    : doctores;
+const doctoresFiltrados = especialidadSeleccionada 
+  ? doctores.filter(d => d.especialidad?.idEspecialidad === parseInt(especialidadSeleccionada))
+  : doctores;
 
-  // Filtrar citas según los selects
-  const citasFiltradas = citas.filter(cita => {
-    const doctor = doctoresMap[cita.doctorid];
-    
-    // Filtro por especialidad
-    if (especialidadSeleccionada && doctor?.especialidadid !== especialidadSeleccionada) {
-      return false;
-    }
-    
-    // Filtro por doctor
-    if (doctorSeleccionado && cita.doctorid !== doctorSeleccionado) {
-      return false;
-    }
-    
-    return true;
-  });
+// Filtrar citas según los selects
+const citasFiltradas = citas.filter(cita => {
+  const doctor = cita.doctor;
+
+  // Filtro por especialidad
+  if (especialidadSeleccionada && doctor?.especialidad?.idEspecialidad !== parseInt(especialidadSeleccionada)) {
+    return false;
+  }
+
+  // Filtro por doctor
+  if (doctorSeleccionado && doctor?.idUser !== parseInt(doctorSeleccionado)) {
+    return false;
+  }
+
+  return true;
+});
+
+
+
 
   return (
     <div>
@@ -478,134 +442,101 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
           </tr>
         </thead>
         <tbody>
-          {citasFiltradas.length > 0 ? (
-            citasFiltradas
-              .sort((a, b) => {
-                const horarioA = horariosMap[a.horarioid];
-                const horarioB = horariosMap[b.horarioid];
-                
-                if (!horarioA && !horarioB) return 0;
-                if (!horarioA) return 1;
-                if (!horarioB) return -1;
-                
-                let fechaA, fechaB;
+  {citasFiltradas.length > 0 ? (
+    citasFiltradas
+      .sort((a, b) => {
+        const fechaA = new Date(a.horario?.fecha || 0);
+        const fechaB = new Date(b.horario?.fecha || 0);
+        return fechaB - fechaA;
+      })
+      .map(cita => {
+        const paciente = cita.paciente;
+        const doctor = cita.doctor;
+        const especialidad = doctor?.especialidad || null;
+        const horario = cita.horario;
 
-                if (typeof horarioA.fecha === 'string') {
-                  fechaA = new Date(horarioA.fecha);
-                } else if (horarioA.fecha && horarioA.fecha.seconds) {
-                  fechaA = new Date(horarioA.fecha.seconds * 1000);
-                } else if (horarioA.fecha instanceof Date) {
-                  fechaA = horarioA.fecha;
-                } else {
-                  fechaA = new Date(0); 
-                }
-                
-                if (typeof horarioB.fecha === 'string') {
-                  fechaB = new Date(horarioB.fecha);
-                } else if (horarioB.fecha && horarioB.fecha.seconds) {
-                  fechaB = new Date(horarioB.fecha.seconds * 1000);
-                } else if (horarioB.fecha instanceof Date) {
-                  fechaB = horarioB.fecha;
-                } else {
-                  fechaB = new Date(0); 
-                }
-                return fechaB - fechaA; 
-              })
-              .map(cita => {
-                const paciente = pacientesMap[cita.pacienteid];
-                const doctor = doctoresMap[cita.doctorid];
-                const especialidad = doctor ? especialidadesMap[doctor.especialidadid] : null;
-                const horario = horariosMap[cita.horarioid];
+        return (
+          <tr key={cita.idCita}>
+            <td>{paciente ? `${paciente.nombre} ${paciente.apellido}` : "Sin paciente"}</td>
+            <td>{doctor ? `${doctor.nombre} ${doctor.apellido}` : "Sin doctor"}</td>
+            <td>{especialidad ? especialidad.nombre : "Sin especialidad"}</td>
+            <td>
+              {editandoCitaId === cita.idCita ? (
+                <div>
+                  <input
+                    type="datetime-local"
+                    value={fechaHoraEdit}
+                    onChange={e => {
+                      setFechaHoraEdit(e.target.value);
+                      setErrorValidacion("");
+                    }}
+                  />
+                  {errorValidacion && (
+                    <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                      {errorValidacion}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                horario ? formatearFecha(horario.fecha) : "Sin horario"
+              )}
+            </td>
+            <td>
+              {editandoCitaId === cita.idCita ? (
+                <input
+                  type="text"
+                  value={descripcionEdit}
+                  onChange={e => setDescripcionEdit(e.target.value)}
+                />
+              ) : (
+                cita.descripcion
+              )}
+            </td>
+            <td className={
+                cita.estado === "confirmado" ? "texto-confirmado" :
+                cita.estado === "rechazado" ? "texto-rechazado" :
+                cita.estado === "pendiente" ? "texto-pendiente" :
+                ""
+              }>
+              {cita.estado}
+            </td>
+            <td>
+              {editandoCitaId === cita.idCita ? (
+                <>
+                  <button onClick={() => guardarEdicion(cita.idCita)} disabled={cargandoValidacion}>
+                    {cargandoValidacion ? "Validando..." : "Guardar"}
+                  </button>
+                  <button onClick={() => {
+                    setEditandoCitaId(null);
+                    setErrorValidacion("");
+                  }} disabled={cargandoValidacion}>
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => {
+                    setEditandoCitaId(cita.idCita);
+                    setDescripcionEdit(cita.descripcion);
+                    setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
+                    setErrorValidacion("");
+                  }}>Modificar</button>
 
-                return (
-                  <tr key={cita.id}>
-                    <td>{paciente ? `${paciente.nombre} ${paciente.apellido}` : cita.pacienteid}</td>
-                    <td>{doctor ? `${doctor.nombre} ${doctor.apellido}` : cita.doctorid}</td>
-                    <td>{especialidad ? especialidad.nombre : "Sin especialidad"}</td>
-                    <td>
-                      {editandoCitaId === cita.id ? (
-                        <div>
-                          <input
-                            type="datetime-local"
-                            value={fechaHoraEdit}
-                            onChange={e => {
-                              setFechaHoraEdit(e.target.value);
-                              setErrorValidacion("");
-                            }}
-                          />
-                          {errorValidacion && (
-                            <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
-                              {errorValidacion}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        horario ? (
-                          formatearFecha(horario.fecha) || "Sin horario"
-                        ) : "Sin horario"
-                      )}
-                    </td>
-                    <td>
-                      {editandoCitaId === cita.id ? (
-                        <input
-                          type="text"
-                          value={descripcionEdit}
-                          onChange={e => setDescripcionEdit(e.target.value)}
-                        />
-                      ) : (
-                        cita.descripcion
-                      )}
-                    </td>
-                    <td className={
-                        cita.estado === "confirmado" ? "texto-confirmado" :
-                        cita.estado === "rechazado" ? "texto-rechazado" :
-                        cita.estado === "pendiente" ? "texto-pendiente" :
-                        ""
-                      }>
-                        {cita.estado}
-                      </td>
-                    <td>
-                      {editandoCitaId === cita.id ? (
-                        <>
-                          <button
-                            onClick={() => guardarEdicion(cita.id)}
-                            disabled={cargandoValidacion}
-                          >
-                            {cargandoValidacion ? "Validando..." : "Guardar"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditandoCitaId(null);
-                              setErrorValidacion("");
-                            }}
-                            disabled={cargandoValidacion}
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => {
-                            setEditandoCitaId(cita.id);
-                            setDescripcionEdit(cita.descripcion);
-                            setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
-                            setErrorValidacion("");
-                          }}>Modificar</button>
+                  <button onClick={() => actualizarEstadoCita(cita.idCita, "confirmado", horario?.idHorario)}>Confirmar</button>
+                  <button onClick={() => actualizarEstadoCita(cita.idCita, "rechazado", horario?.idHorario)}>Rechazar</button>
+                </>
+              )}
+            </td>
+          </tr>
+        )
+      })
+  ) : (
+    <tr>
+      <td colSpan="7">No hay citas {especialidadSeleccionada || doctorSeleccionado ? 'que coincidan con los filtros seleccionados' : 'registradas'}.</td>
+    </tr>
+  )}
+</tbody>
 
-                          <button onClick={() => actualizarEstadoCita(cita.id, "confirmado", cita.horarioid)}>Confirmar</button>
-                          <button onClick={() => actualizarEstadoCita(cita.id, "rechazado", cita.horarioid)}>Rechazar</button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })
-          ) : (
-            <tr>
-              <td colSpan="7">No hay citas {especialidadSeleccionada || doctorSeleccionado ? 'que coincidan con los filtros seleccionados' : 'registradas'}.</td>
-            </tr>
-          )}
-        </tbody>
       </table>
     </div>
   );
