@@ -13,6 +13,7 @@ const Perfil = () => {
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [rol, setRol] = useState("");
 
   useEffect(() => {
   const cargarDatos = async () => {
@@ -39,7 +40,8 @@ const Perfil = () => {
       setApellido(datos.apellido || "");
       setCedula(datos.cedula || "");   // si tu backend devuelve cédula
       setDireccion(datos.direccion || ""); // solo si se incluye
-      setTelefono(datos.telefono || "");   // solo si se incluye
+      setTelefono(datos.telefono || ""); 
+      setRol(datos.rol);// solo si se incluye
 
       // Si incluyes fechaNacimiento en el backend, puedes agregarlo así:
       if (datos.fechaNacimiento) {
@@ -76,7 +78,9 @@ const Perfil = () => {
       cedula,
       direccion,
       telefono,
-      fechaNacimiento, // puedes enviar como string ISO: "2025-07-19"
+      fechaNacimiento,
+      rol,
+      uid: localStorage.getItem("uid"),// puedes enviar como string ISO: "2025-07-19"
     };
 
     const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {

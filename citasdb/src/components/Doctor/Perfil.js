@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, query, collection, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../servicios/firebase";
+import axios from 'axios';
 
 import { Timestamp } from "firebase/firestore";
 
@@ -20,6 +21,8 @@ const Perfil = () => {
   const [docId, setDocId] = useState("");
   const [idEsp , setIdEsp] = useState("")
   const [especialidades, setEspecialidades] = useState([]);
+   const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
 
 
 
@@ -132,6 +135,22 @@ const handleGuardar = async () => {
 };
 
 
+const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
+  const endpoint = `http://localhost:8080/citasmedicas/citasmedicas/reportes/${tipo}`;
+  const response = await axios.get(endpoint, {
+    params: { fechaInicio, fechaFin },
+    responseType: 'blob'
+  });
+
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `reporte-${tipo}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+};
+
+
 
 
   return (
@@ -179,6 +198,23 @@ const handleGuardar = async () => {
         <button className="ajuste-btn-guardar" onClick={handleGuardar}>
         Guardar Cambios
       </button>
+        </div>
+    </div>
+
+
+    {/* === NUEVO APARTADO PARA REPORTES === */}
+      <div className="reporte-container" style={{ marginTop: "30px" }}>
+        <h3>Generar Reportes</h3>
+        <div className="reporte-form-group">
+          <label>Fecha Inicio:</label>
+          <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+        </div>
+        <div className="reporte-form-group">
+          <label>Fecha Fin:</label>
+          <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+        </div>
+        <div className="reporte-buttons" style={{ marginTop: "10px" }}>
+          <button onClick={() => descargarReporte("general", fechaInicio, fechaFin)}>Reporte General</button>
         </div>
     </div>
     </>

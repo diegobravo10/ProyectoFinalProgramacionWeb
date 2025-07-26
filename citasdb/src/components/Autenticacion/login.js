@@ -41,7 +41,7 @@ const Login = () => {
       localStorage.setItem('idUser', userData.idUser);
 
     } else {
-      alert('Token inválido o sesión no autorizada');
+      alert('No se encuentra registrado, por favor llenar el siguiente formulario');
       navigate("/registro");
     }
 

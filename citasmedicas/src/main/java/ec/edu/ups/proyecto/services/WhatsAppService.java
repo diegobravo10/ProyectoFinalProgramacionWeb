@@ -27,7 +27,7 @@ public class WhatsAppService {
                     mensaje
             ).create();
 
-            System.out.println("Mensaje de WhatsApp enviado con SID: " + message.getSid());
+            System.out.println("Mensaje de WhatsApp enviado con SID: " + message.getSid() + "...." + numeroDestino);
         } catch (Exception e) {
             e.printStackTrace();
         }

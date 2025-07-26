@@ -30,6 +30,8 @@ const Doctor = () => {
   const [docId, setDocId] = useState("");
   const [pacientes, setPacientes] = useState([]);
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+   const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
 
 
   // Cargar datos del usuario logeado
@@ -340,11 +342,121 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
 };
 
 
+const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
+
+
+    if (!fechaInicio) {
+    alert("Por favor ingrese la fecha de inicio.");
+    return;
+  }
+  if (!fechaFin) {
+    alert("Por favor ingrese la fecha de fin.");
+    return;
+  }
+
+  // Opcional: Validar que fechaFin no sea menor que fechaInicio
+  if (new Date(fechaFin) < new Date(fechaInicio)) {
+    alert("La fecha fin no puede ser anterior a la fecha inicio.");
+    return;
+  }
+  const endpoint = `http://localhost:8080/citasmedicas/citasmedicas/reportes/${tipo}`;
+
+  const params = { fechaInicio, fechaFin };
+  if (tipo === "doctor") {
+    const doctorId = parseInt(localStorage.getItem("idUser"), 10);
+    params.doctorId = doctorId;
+
+  }
+
+  console.log(params);
+
+  const response = await axios.get(endpoint, {
+    params,
+    responseType: 'blob'
+  });
+
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `reporte-${tipo}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+};
+
+
 
   return (
     <div>
-      <h1>Hola {nombre.split(" ")[0]} {apellido.split(" ")[0]} </h1>
-      <hr/>
+      
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          
+          <div>
+
+          </div>
+          <h1>
+            Hola, {nombre.split(" ")[0]} {apellido.split(" ")[0]} 
+          </h1>
+
+          <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              background: "#f8f9fa",
+              padding: "15px 20px",
+              borderRadius: "10px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+          }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <label style={{ fontWeight: "bold", marginBottom: "5px" }}>Fecha Inicio</label>
+              <input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                style={{
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "5px"
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <label style={{ fontWeight: "bold", marginBottom: "5px" }}>Fecha Fin</label>
+              <input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                style={{
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "5px"
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => descargarReporte("doctor", fechaInicio, fechaFin)}
+              style={{
+                backgroundColor: "#4CAF50",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "bold",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                transition: "0.3s"
+              }}
+              onMouseOver={(e) => (e.target.style.backgroundColor = "#45a049")}
+              onMouseOut={(e) => (e.target.style.backgroundColor = "#4CAF50")}
+            >
+              📥 Reporte
+            </button>
+          </div>
+
+        </div>
+
+        <hr />
 
       <h2>Citas</h2>
       <table>

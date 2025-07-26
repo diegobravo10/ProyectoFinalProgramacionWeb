@@ -52,6 +52,7 @@ public class DisponibilidadON {
 	public void crearDisponibilidadYHorarios(String diaSemana, LocalTime horaInicio, LocalTime horaFin, String uid, int intervaloMinutos) throws Exception {
 	    // 1. Buscar el doctor
 	    Doctor doctor = onDoctor.getDoctorUid(uid);
+	    System.out.println(uid);
 	    if (doctor == null) {
 	        throw new IllegalArgumentException("Doctor no encontrado");
 	    }

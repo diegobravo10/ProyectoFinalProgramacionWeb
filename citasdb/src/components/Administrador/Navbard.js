@@ -59,6 +59,7 @@ const NavbarA = () => {
             <li><Link to="/admin/horarios">Horarios</Link></li>
             <li><Link to="/admin/ajustes">Ajustes</Link></li>
             <li><Link to="/admin/perfil">Perfil</Link></li>
+            <li><Link to="/admin/reportes">Reportes</Link></li>
             <li>
               <button onClick={handleLogout} className="logout-button">
                 Salir

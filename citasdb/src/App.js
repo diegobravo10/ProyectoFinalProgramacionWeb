@@ -12,6 +12,7 @@ import Registro from './components/Autenticacion/Registro';
 // Paciente
 import Paciente from './components/Paciente/paciente';
 import PerfilP from './components/Paciente/Perfil';
+import NotifiacionP from './components/Paciente/Notificaciones'; 
 
 // Doctor
 import Doctor from './components/Doctor/doctor';  
@@ -23,6 +24,7 @@ import Admin from './components/Administrador/Admin';
 import Ajustes from './components/Administrador/Ajuste';
 import Horarios from './components/Administrador/Horario';
 import PerfilD from "./components/Administrador/perfil";
+import AdminReportes from "./components/Administrador/AdminReportes";
 
 function App() {
   return (
@@ -37,6 +39,7 @@ function App() {
           <Route path="/paciente" element={<PacienteLayout />}>
             <Route index element={<Paciente />} />
             <Route path="perfil" element={<PerfilP />} />
+            <Route path="notificacion" element={<NotifiacionP/>} />
             {/* Puedes agregar más subrutas si lo deseas */}
           </Route>
 
@@ -53,6 +56,7 @@ function App() {
             <Route path="ajustes" element={<Ajustes />} />
             <Route path="horarios" element={<Horarios />} /> 
             <Route path="perfil" element={<PerfilD />} /> 
+            <Route path="reportes" element={<AdminReportes/>} /> 
           </Route>
         </Routes>
       </Router>

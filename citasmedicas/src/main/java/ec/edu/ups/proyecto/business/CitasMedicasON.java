@@ -26,6 +26,9 @@ public class CitasMedicasON {
 		} else {
 			p.setIdCita(pe.getIdCita());
 			daoCM.update(p);
+			Horario h = onHorario.findById(p.getHorario().getIdHorario());
+			h.setDisponible(false);
+			onHorario.guardarHorario(h);
 		}
 	
 	}

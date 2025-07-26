@@ -72,4 +72,19 @@ public class DoctorDAO {
 	    List<Doctor> resultado = query.getResultList();
 	    return resultado.isEmpty() ? null : resultado.get(0);
 	}
+	
+	public void convertirPacienteADoctor(Long usuarioId) {
+        // Actualizar directamente el discriminador
+        String sql = "UPDATE usuario SET dtype = 'Doctor' WHERE id = :id";
+        em.createNativeQuery(sql)
+                    .setParameter("id", usuarioId)
+                    .executeUpdate();
+        
+        // Refrescar el contexto para que Hibernate reconozca el cambio
+        em.flush();
+        em.clear();
+        
+        
+    }
+	
 }

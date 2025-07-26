@@ -65,6 +65,7 @@ const Navbar = () => {
     <ul className="navbar-links">
         <li><Link to="/paciente">Agendar</Link></li>
         <li><Link to="/paciente/perfil">Perfil</Link></li>
+        <li><Link to="/paciente/notificacion">Notificaciones</Link></li>
         <li>
               <button onClick={handleLogout} className="logout-button">
                 Salir
