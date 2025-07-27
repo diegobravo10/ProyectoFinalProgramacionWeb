@@ -62,7 +62,7 @@ public class UsuarioServices {
 	}
 	
 	@GET
-    @Path("/{nombre}")
+	@Path("/nombre/{nombre}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response obtenerPersona(@PathParam("nombre") String nombre) {
         try {
@@ -124,6 +124,19 @@ public class UsuarioServices {
 	                       .entity("Token inválido o error interno").build();
 	    }
 	}
+	
+	@GET
+	@Path("/cedula/{cedula}")
+	@Produces(MediaType.APPLICATION_JSON)
+    public Response obtenerUsuario(@PathParam("cedula") String cedula) throws Exception {
+        Usuario usuario = onContactos.getPersonacedula(cedula);
+        if (usuario == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                           .entity("{\"mensaje\": \"Usuario no encontrado\"}")
+                           .build();
+        }
+        return Response.ok(usuario).build();
+    }
 
 
 }
