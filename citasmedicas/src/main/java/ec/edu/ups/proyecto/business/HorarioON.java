@@ -46,6 +46,10 @@ public class HorarioON {
 		
 		daoHorario.actualizarEstadoHorario(idHorario, disponible);
 	}
+	
+	public void eliminarHorario(int idHorario) {
+		daoHorario.delete(idHorario);
+	}
 
 
 	

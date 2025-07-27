@@ -21,7 +21,7 @@ public class Horario {
    private boolean disponible;
 
    
-   @ManyToOne(cascade = CascadeType.ALL)
+   @ManyToOne
    @JoinColumn(name = "id_disponibilidad")
    private Disponibilidad disponibilidad;
    

@@ -98,6 +98,22 @@ const cambiarEstado = async (horario) => {
   }
 };
 
+const eliminarHorario = async (idHorario) => {
+  try {
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${idHorario}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) throw new Error("Error al eliminar el horario");
+    alert("Horario eliminado correctamente");
+    cargarHorarios(localStorage.getItem("idUser"));
+  } catch (error) {
+    console.error("Error al eliminar horario:", error);
+    alert("No se pudo eliminar el horario");
+  }
+};
+
+
 
   return (
     <div className="contenedorhorarios">
@@ -151,12 +167,24 @@ const cambiarEstado = async (horario) => {
                   {h.disponible ? "Disponible" : "No disponible"}
                 </td>
                 <td>
-                <button
-                  className="botonE"
-                  onClick={() => cambiarEstado(h)}>
-                  Cambiar Estado
-                </button>
+                  <button
+                    className="botonE"
+                    onClick={() => cambiarEstado(h)}
+                  >
+                    Cambiar Estado
+                  </button>
+
+                  {h.disponible && (
+                    <button
+                      className="botonEliminar"
+                      style={{ marginLeft: "8px", background: "red", color: "white" }}
+                      onClick={() => eliminarHorario(h.idHorario)}
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </td>
+
               </tr>
             );
           })}
