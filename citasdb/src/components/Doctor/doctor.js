@@ -309,7 +309,7 @@ const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
 
   const params = { fechaInicio, fechaFin };
   if (tipo === "doctor") {
-    const doctorId = parseInt(localStorage.getItem("idUser"), 10);
+    const doctorId = parseInt(localStorage.getItem("cedula"), 10);
     params.doctorId = doctorId;
 
   }

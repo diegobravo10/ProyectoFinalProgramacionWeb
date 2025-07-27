@@ -77,7 +77,7 @@ const Registro = () => {
 
     const result = await response.json();
     if (response.ok) {
-      alert("Registro exitoso tanto en Firestore como en el backend");
+      alert("Registro exitoso!");
       window.location.href = rol === "doctor" ? "/doctor" : "/paciente";
     } else {
       console.error(result);

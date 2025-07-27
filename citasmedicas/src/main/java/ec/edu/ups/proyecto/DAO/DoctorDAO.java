@@ -73,7 +73,7 @@ public class DoctorDAO {
 	    return resultado.isEmpty() ? null : resultado.get(0);
 	}
 	
-	public void convertirPacienteADoctor(Long usuarioId) {
+	public void convertirPacienteADoctor(int usuarioId) {
         // Actualizar directamente el discriminador
         String sql = "UPDATE usuario SET dtype = 'Doctor' WHERE id = :id";
         em.createNativeQuery(sql)

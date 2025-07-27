@@ -27,11 +27,11 @@ public class ReporteResource {
     @Produces("application/pdf")
     public Response reporteDoctor(@QueryParam("fechaInicio") String fechaInicio,
                                   @QueryParam("fechaFin") String fechaFin,
-                                  @QueryParam("doctorId") int doctorId) {
+                                  @QueryParam("doctorId") String doctorId) {
         Map<String, Object> params = new HashMap<>();
         params.put("FECHA_INICIO", java.sql.Date.valueOf(fechaInicio));
         params.put("FECHA_FIN", java.sql.Date.valueOf(fechaFin));
-        params.put("DOCTOR_ID", doctorId);  // parámetro extra para Jasper
+        params.put("CEDULA_DOCTOR", doctorId);  // parámetro extra para Jasper
 
         return generarPDF(
             "C:/Users/user/JaspersoftWorkspace/MyReports/Invoice.jasper",

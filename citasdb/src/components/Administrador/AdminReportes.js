@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const AdminReportes = () => {
@@ -6,6 +6,23 @@ const AdminReportes = () => {
   const [fechaFin, setFechaFin] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [especialidad, setEspecialidad] = useState("");
+  const [especialidades, setEspecialidades] = useState([]); // <-- lista de especialidades
+
+  // Cargar especialidades al montar el componente
+  useEffect(() => {
+    const cargarEspecialidades = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/citasmedicas/citasmedicas/especialidades"
+        );
+        setEspecialidades(response.data || []);
+      } catch (error) {
+        console.error("Error al cargar especialidades", error);
+        alert("No se pudieron cargar las especialidades");
+      }
+    };
+    cargarEspecialidades();
+  }, []);
 
   const descargarReporte = async (tipo) => {
     if (!fechaInicio || !fechaFin) {
@@ -18,7 +35,7 @@ const AdminReportes = () => {
 
     if (tipo === "doctor") {
       if (!doctorId) {
-        alert("Debe ingresar el ID del doctor");
+        alert("Debe ingresar la cédula del doctor");
         return;
       }
       params.doctorId = doctorId;
@@ -26,17 +43,20 @@ const AdminReportes = () => {
 
     if (tipo === "especialidad") {
       if (!especialidad) {
-        alert("Debe ingresar la especialidad");
+        alert("Debe seleccionar una especialidad");
         return;
       }
-    params.especialidad = especialidad.trim() === "" ? null : especialidad.trim();
-
-
+      params.especialidad = especialidad;
     }
 
     try {
-      const response = await axios.get(endpoint, { params, responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const response = await axios.get(endpoint, {
+        params,
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" })
+      );
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `reporte-${tipo}.pdf`);
@@ -49,25 +69,50 @@ const AdminReportes = () => {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "40px auto", padding: 20, border: "1px solid #ccc", borderRadius: 10 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 20 }}>Generación de Reportes</h2>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: "40px auto",
+        padding: 20,
+        border: "1px solid #ccc",
+        borderRadius: 10,
+      }}
+    >
+      <h2 style={{ textAlign: "center", marginBottom: 20 }}>
+        Generación de Reportes
+      </h2>
 
       {/* Selección de fechas */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+      <div
+        style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}
+      >
         <div>
           <label>Fecha Inicio: </label>
-          <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+          <input
+            type="date"
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+          />
         </div>
         <div>
           <label>Fecha Fin: </label>
-          <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+          <input
+            type="date"
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+          />
         </div>
       </div>
 
       {/* Reporte Doctor */}
       <div style={{ marginBottom: 20 }}>
-        <label>ID Doctor: </label>
-        <input type="text" placeholder="Ej: 1" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} />
+        <label>Cédula Doctor: </label>
+        <input
+          type="text"
+          placeholder="C.I."
+          value={doctorId}
+          onChange={(e) => setDoctorId(e.target.value)}
+        />
         <button style={botonEstilo} onClick={() => descargarReporte("doctor")}>
           📥 Generar Reporte Doctor
         </button>
@@ -76,20 +121,31 @@ const AdminReportes = () => {
       {/* Reporte Especialidad */}
       <div style={{ marginBottom: 20 }}>
         <label>Especialidad: </label>
-        <input
-          type="text"
-          placeholder="Ej: Cardiología"
+        <select
           value={especialidad}
           onChange={(e) => setEspecialidad(e.target.value)}
-        />
-        <button style={botonEstilo} onClick={() => descargarReporte("especialidad")}>
+        >
+          <option value="">Seleccione...</option>
+          {especialidades.map((esp, index) => (
+            <option key={index} value={esp.nombre}>
+              {esp.nombre}
+            </option>
+          ))}
+        </select>
+        <button
+          style={botonEstilo}
+          onClick={() => descargarReporte("especialidad")}
+        >
           📥 Generar Reporte Especialidad
         </button>
       </div>
 
       {/* Reporte General */}
       <div style={{ textAlign: "center" }}>
-        <button style={{ ...botonEstilo, width: "100%" }} onClick={() => descargarReporte("general")}>
+        <button
+          style={{ ...botonEstilo, width: "100%" }}
+          onClick={() => descargarReporte("general")}
+        >
           📥 Generar Reporte General
         </button>
       </div>

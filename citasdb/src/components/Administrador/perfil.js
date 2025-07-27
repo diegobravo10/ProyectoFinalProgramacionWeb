@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
 import { auth, provider, db } from "../servicios/firebase.js";
 import { Timestamp } from "firebase/firestore";
-
+import { onAuthStateChanged } from "firebase/auth";
 import './Ajuste.css';
 const PerfilD = () => {
   const [correo, setCorreo] = useState("");
@@ -16,34 +16,33 @@ const PerfilD = () => {
   const [especialidades, setEspecialidades] = useState([]);
 
 
-  useEffect(() => {
-    const cargarDatos = async () => {
+
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const token = await user.getIdToken();
       try {
-        const user = auth.currentUser;
-        const token = user && await user.getIdToken();
-  
         const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
           headers: {
             'Authorization': 'Bearer ' + token
           }
         });
-  
+
         if (!res.ok) {
           console.warn("No se pudo obtener el usuario");
           return;
         }
-  
+
         const datos = await res.json();
-  
-        // Seteamos los campos
+
         setCorreo(datos.email || "");
         setNombre(datos.nombre || "");
         setApellido(datos.apellido || "");
-        setCedula(datos.cedula || "");   // si tu backend devuelve cédula
-        setDireccion(datos.direccion || ""); // solo si se incluye
-        setTelefono(datos.telefono || "");   // solo si se incluye
-  
-        // Si incluyes fechaNacimiento en el backend, puedes agregarlo así:
+        setCedula(datos.cedula || "");
+        setDireccion(datos.direccion || "");
+        setTelefono(datos.telefono || "");
+
         if (datos.fechaNacimiento) {
           const fecha = new Date(datos.fechaNacimiento);
           const yyyy = fecha.getFullYear();
@@ -51,14 +50,17 @@ const PerfilD = () => {
           const dd = String(fecha.getDate()).padStart(2, '0');
           setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
         }
-  
       } catch (error) {
         console.error("Error al obtener datos:", error);
       }
-    };
-  
-    cargarDatos();
-  }, []);
+    } else {
+      console.log("No hay usuario autenticado");
+    }
+  });
+
+  return () => unsubscribe(); // limpiar listener al desmontar
+}, []);
+
 
 
 useEffect(() => {
