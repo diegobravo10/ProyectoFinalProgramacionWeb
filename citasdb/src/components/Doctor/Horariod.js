@@ -81,6 +81,7 @@ const cambiarEstado = async (horario) => {
   };
 
   try {
+    console.log("Datos enviados:", body);
     const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/disponibilidad/disponibilidades", {
       method: "POST",
       headers: {

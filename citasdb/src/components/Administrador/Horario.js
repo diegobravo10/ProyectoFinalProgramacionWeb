@@ -13,7 +13,11 @@ const HorarioAdmin = () => {
 const [doctores, setDoctores] = useState([]);
 const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
 const [doctorSeleccionado, setDoctorSeleccionado] = useState("");
-const [citas, setCitas] = useState([]);
+const [diaSemana, setDiaSemana] = useState("MONDAY");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFin, setHoraFin] = useState("");
+  const [intervalo, setIntervalo] = useState(30);
+  const [idDoctor, setIdDoctor] = useState("");
 
   //cargar especialidades
   useEffect(() => {
@@ -73,6 +77,16 @@ const doctoresFiltrados = especialidadSeleccionada
   : doctores;
 
 
+//obtener los datos del doctor 
+ useEffect(() => {
+  if (!doctorSeleccionado) return;
+
+  const doc = doctores.find(d => d.id === parseInt(doctorSeleccionado));
+  if (doc) {
+    setIdDoctor(doc.uid);
+
+  }
+}, [doctorSeleccionado, doctores]);
 
 
 
@@ -117,46 +131,33 @@ useEffect(() => {
 
 
 //agregar horario
-// Agregar un horario al doctor
-const agregarHorario = async () => {
-  if (!nuevaFechaHora || !doctorSeleccionado) {
-    alert("Por favor complete todos los campos");
-    return;
-  }
+const crearDisponibilidad = async () => {
+  if (!horaInicio || !horaFin || !idDoctor) return;
+
+  const body = {
+    diaSemana,
+    horaInicio,
+    horaFin,
+    doctorId: idDoctor,
+    intervalo: intervalo
+  };
 
   try {
-    // Convertir fecha a formato compatible con @JsonFormat del backend
-    const fechaFormateada = nuevaFechaHora.replace("T", " ") + ":00"; // yyyy-MM-dd HH:mm:ss
-
-    const horarioData = {
-      fecha: fechaFormateada,
-      disponible: true,
-      disponibilidad: {
-        doctor: {
-          idUser: parseInt(doctorSeleccionado)
-        }
-      }
-    };
-
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/horario", {
+    console.log("Datos enviados:", body);
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/disponibilidad/disponibilidades", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(horarioData)
+      body: JSON.stringify(body)
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error("Error al agregar horario: " + err);
-    }
-
-    setNuevaFechaHora("");
-    cargarHorarios(doctorSeleccionado);
-
+    if (!response.ok) throw new Error("Error al crear disponibilidad");
+    alert("Disponibilidad creada correctamente");
+    cargarHorarios(localStorage.getItem("idUser"))
   } catch (error) {
-    console.error("Error al agregar horario:", error);
-    alert("Error al agregar horario: " + error.message);
+    console.error("Error:", error);
+    alert("Ocurrió un error");
   }
 };
 
@@ -165,48 +166,41 @@ const agregarHorario = async () => {
 //cambiar el estado
   const cambiarEstado = async (horario) => {
   try {
-    setCargando(true);
-
     const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${horario.idHorario}/disponibilidad`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        disponible: !horario.disponibilidad
-      })
+    
+      body: JSON.stringify({ disponible: !horario.disponible }) // objeto con propiedad disponible
     });
+    
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error("Error al actualizar disponibilidad: " + err);
-    }
-
-    await cargarHorarios(doctorSeleccionado);
+    if (!response.ok) throw new Error("Error al actualizar disponibilidad");
+    cargarHorarios(localStorage.getItem("idUser"));
+    cargarHorarios(doctorSeleccionado);
   } catch (error) {
     console.error("Error al cambiar estado:", error);
-    alert("Error al cambiar estado: " + error.message);
-  } finally {
-    setCargando(false);
   }
 };
 
 
 //eliminar un horario
-  const eliminarHorario = async (horario) => {
-    if (!window.confirm("¿Está seguro de eliminar este horario?")) return;
-    try {
-      setCargando(true);
-      const ref = doc(db, "horarios", horario.id);
-      await deleteDoc(ref);
-      await cargarHorarios(doctorSeleccionado);
-    } catch (error) {
-      console.error("Error al eliminar horario:", error);
-      alert("Error al eliminar horario: " + error.message);
-    } finally {
-      setCargando(false);
-    }
-  };
+  const eliminarHorario = async (idHorario) => {
+  try {
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${idHorario}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) throw new Error("Error al eliminar el horario");
+    alert("Horario eliminado correctamente");
+    cargarHorarios(localStorage.getItem("idUser"));
+    cargarHorarios(doctorSeleccionado);
+  } catch (error) {
+    console.error("Error al eliminar horario:", error);
+    alert("No se pudo eliminar el horario");
+  }
+};
 
   return (
     <div className="contenedorH">
@@ -244,24 +238,38 @@ const agregarHorario = async () => {
           </select>
         </label>
 
-        <input
-          type="datetime-local"
-          value={nuevaFechaHora}
-          onChange={(e) => setNuevaFechaHora(e.target.value)}
-          disabled={cargando}
-        />
+          <div>
+      <label>Día:</label>
+      <select value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)}>
+        <option value="MONDAY">Lunes</option>
+        <option value="TUESDAY">Martes</option>
+        <option value="WEDNESDAY">Miércoles</option>
+        <option value="THURSDAY">Jueves</option>
+        <option value="FRIDAY">Viernes</option>
+        <option value="SATURDAY">Sábado</option>
+        <option value="SUNDAY">Domingo</option>
+      </select>
 
-       <button 
-          onClick={agregarHorario} 
-          disabled={!nuevaFechaHora || !doctorSeleccionado || cargando}
-        >
-          {cargando ? "Agregando..." : "Agregar"}
-        </button>
+      <label>Hora Inicio:</label>
+      <input type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
 
-      </div>
+      <label>Hora Fin:</label>
+      <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
 
-      {cargando && <p>Cargando...</p>}
+      <label>Intervalo (minutos):</label>
+      <input 
+        type="number" 
+        value={intervalo} 
+        min="1"
+        onChange={(e) => setIntervalo(e.target.value)} 
+      />
 
+      <button  onClick={crearDisponibilidad}>Crear Disponibilidad</button>
+    </div>
+
+       
+
+    </div>
       
 
       <table>
@@ -273,31 +281,36 @@ const agregarHorario = async () => {
           </tr>
         </thead>
         <tbody>
-          {horarios.length === 0 && !cargando ? (
-            <tr>
-              <td colSpan="3" style={{ textAlign: 'center' }}>
-                No hay horarios disponibles
-              </td>
-            </tr>
-          ) : (
-            horarios.map((h) => (
-              
-              <tr key={h.id}>
-                <td>{h.fecha?.toLocaleString("es-ES") || "Fecha no válida"}</td>
+          {horarios.map((h, i) => {
+            {/*console.log(h);*/}
+            return (
+              <tr key={i}>
+                <td>{new Date(h.fecha).toLocaleString()}</td>
                 <td style={{ color: h.disponible ? "green" : "red" }}>
                   {h.disponible ? "Disponible" : "No disponible"}
                 </td>
                 <td>
-                  <button onClick={() => cambiarEstado(h)} disabled={cargando}>
+                  <button
+                    className="botonE"
+                    onClick={() => cambiarEstado(h)}
+                  >
                     Cambiar Estado
                   </button>
-                  <button onClick={() => eliminarHorario(h)} disabled={cargando}>
-                    Eliminar
-                  </button>
+
+                  {h.disponible && (
+                    <button
+                      className="botonEliminar"
+                      style={{ marginLeft: "8px", background: "red", color: "white" }}
+                      onClick={() => eliminarHorario(h.idHorario)}
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </td>
+
               </tr>
-            ))
-          )}
+            );
+          })}
         </tbody>
       </table>
     </div>

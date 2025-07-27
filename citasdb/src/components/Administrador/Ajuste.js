@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, query, collection, where, getDocs, addDoc,onSnapshot  } from "firebase/firestore";
-import { db } from "../servicios/firebase";
+import { auth, provider, db } from "../servicios/firebase.js";
 import { FaSearch } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa";
 import { Timestamp } from "firebase/firestore";
@@ -24,106 +24,168 @@ const [especialidadFiltrada, setEspecialidadFiltrada] = useState("");
 const [doctoresPorEspecialidad, setDoctoresPorEspecialidad] = useState([]);
 const [doctorSeleccionado, setDoctorSeleccionado] = useState(null);
 const [rolSeleccionado, setRolSeleccionado] = useState('');
+const [doctores, setDoctores] = useState([]);
+const [idDoctor, setIdDoctor] = useState('');
+const [uidDoctor, setUIdDoctor] = useState('');
+const [espDoctor, setEspDoctor] = useState('');
 
 
-const buscarPorCedula = async () => {
-  try {
-    const q = query(collection(db, "users"), where("cedula", "==", busquedaCedula));
-    const querySnapshot = await getDocs(q);
+//buscar todas las especialidades 
+  useEffect(() => {
+  const cargarEspecialidades = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades");
+      
+      if (!response.ok) {
+        throw new Error("Error al obtener especialidades");
+      }
 
-    if (querySnapshot.empty) {
-      alert("No se encontró ningún usuario con esa cédula.");
-      setResultadoBusqueda(null);
-      return;
+      const data = await response.json();
+      setEspecialidades(data);  // El backend ya devuelve la lista en formato esperado
+    } catch (error) {
+      console.error("Error al cargar especialidades:", error);
     }
+  };
 
-    const resultados = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setResultadoBusqueda(resultados[0]); 
+  cargarEspecialidades();
+}, []);
 
+//cargar doctores por su especialidad
+useEffect(() => {
+  const cargarDoctores = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
+
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+        headers: {
+          'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
+        }
+      });
+
+      if (!res.ok) throw new Error("Error al obtener doctores");
+
+      const doctoresData = await res.json();
+
+      const formatted = doctoresData.map(doc => ({
+        ...doc,
+        id: doc.idUser, // Para el select
+        idUser: doc.idUser // Para el backend
+      }));
+
+      setDoctores(formatted);
+
+    } catch (error) {
+      console.error("Error cargando doctores:", error);
+    }
+  };
+
+  cargarDoctores();
+}, []);
+
+// Filtrar doctores por especialidad seleccionada
+const doctoresFiltrados = especialidadSeleccionada 
+  ? doctores.filter(d => d.especialidad?.nombre === especialidadSeleccionada)
+  : doctores;
+
+
+//obtener los datos del doctor 
+ useEffect(() => {
+  if (!doctorSeleccionado) return;
+
+  const doc = doctores.find(d => d.id === parseInt(doctorSeleccionado));
+  if (doc) {
+    setCorreo(doc.correo || "");
+    setNombre(doc.nombre || "");
+    setApellido(doc.apellido || "");
+    setCedula(doc.cedula || "");
+    setDireccion(doc.direccion || "");
+    setTelefono(doc.telefono || "");
+    setEspid(doc.especialidad?.nombre || "");
+    setIdDoctor(doc.idUser || "");
+    setUIdDoctor(doc.uid || "");
+    setEspDoctor(doc.especialidad.idEspecialidad || "");
+        if (doc.fechaNacimiento) {
+          const fecha = new Date(doc.fechaNacimiento);
+          const yyyy = fecha.getFullYear();
+          const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dd = String(fecha.getDate()).padStart(2, '0');
+          setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
+        }
+
+  }
+}, [doctorSeleccionado, doctores]);
+
+//guardar cambios en el doctor guardarCambiosDoctor
+const guardarCambiosDoctor = async () => {
+  const user = auth.currentUser;
+    const token = user && await user.getIdToken();
+    
+  try {
+    
+    const data = {
+      //idEspecialidad: espDoctor,
+      //idUser: idDoctor,
+      correo,
+      nombre,
+      apellido,
+      direccion,
+      cedula,
+      telefono,
+      //dtype: 'Doctor',
+      rol: 'doctor', // si es necesario
+      uid: uidDoctor, // si es necesario
+      fechaNacimiento
+    };
+    console.log("Datos enviados:", data);
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/usuarios`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        //"Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error("Error al actualizar usuario");
+
+    alert("Cambios guardados correctamente.");
   } catch (error) {
-    console.error("Error al buscar:", error);
+    console.error("Error al guardar:", error);
+    alert("Error al guardar los cambios.");
   }
 };
 
 
-  useEffect(() => {
-  if (!doctorSeleccionado?.id) return;
-
-  const cargarDatosDoctor = async () => {
-    try {
-      const userRef = doc(db, "users", doctorSeleccionado.id);
-      const docSnap = await getDoc(userRef);
-
-      if (docSnap.exists()) {
-        const datos = docSnap.data();
-        setCorreo(datos.correo || "");
-        setNombre(datos.nombre || "");
-        setApellido(datos.apellido || "");
-        setCedula(datos.cedula || "");
-        setDireccion(datos.direccion || "");
-        setTelefono(datos.telefono || "");
-
-        if (datos.especialidadid) {
-          const espe = doc(db, "especialidad", datos.especialidadid);
-          const docEspe = await getDoc(espe);
-          const datEsp = docEspe.data();
-          setEspid(datEsp.nombre || "");
-        } else {
-          setEspid("");
-        }
-
-        if (datos.fechaNacimiento && datos.fechaNacimiento.toDate) {
-          const fecha = datos.fechaNacimiento.toDate();
-          const yyyy = fecha.getFullYear();
-          const mm = String(fecha.getMonth() + 1).padStart(2, "0");
-          const dd = String(fecha.getDate()).padStart(2, "0");
-          setFechaNacimiento(`${yyyy}-${mm}-${dd}`);
-        } else {
-          setFechaNacimiento("");
-        }
-      } else {
-        console.warn("No se encontró el usuario");
-      }
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
-    }
-  };
-
-  cargarDatosDoctor();
-}, [doctorSeleccionado]);
 
 
+//buscar por la cedula
 
-useEffect(() => {
-  const unsubscribe = onSnapshot(collection(db, "especialidad"), (querySnapshot) => {
-    const lista = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      nombre: doc.data().nombre
-    }));
-    setEspecialidades(lista);
-  }, (error) => {
-    console.error("Error al obtener especialidades:", error);
-  });
-
-  return () => unsubscribe();
-}, []);
-
-const obtenerDoctoresPorEspecialidad = async (especialidadId) => {
-  setDoctorSeleccionado(null);
+const buscarPorCedula = async () => {
   try {
-    const q = query(
-      collection(db, "users"),
-      where("rol", "==", "doctor"),
-      where("especialidadid", "==", especialidadId)
-    );
-    const snapshot = await getDocs(q);
-    const lista = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setDoctoresPorEspecialidad(lista);
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/usuarios/cedula/${busquedaCedula}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        alert("No se encontró ningún usuario con esa cédula.");
+        setResultadoBusqueda(null);
+      } else {
+        throw new Error("Error al buscar el usuario");
+      }
+      return;
+    }
+
+    const usuario = await response.json();
+    if (Array.isArray(usuario.fechaNacimiento)) {
+  const [year, month, day] = usuario.fechaNacimiento;
+  usuario.fechaNacimiento = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+setResultadoBusqueda(usuario);
+
   } catch (error) {
-    console.error("Error al obtener doctores por especialidad:", error);
+    console.error("Error al buscar:", error);
+    alert("Ocurrió un error al buscar el usuario.");
   }
 };
 
@@ -140,15 +202,26 @@ const obtenerDoctoresPorEspecialidad = async (especialidadId) => {
   }
 
   try {
-    const userRef = doc(db, "users", resultadoBusqueda.id);
-
-    const datosActualizar = {
+    // Construir objeto Usuario con los datos existentes + cambios
+    const usuarioActualizado = {
+      ...resultadoBusqueda,
       rol: rolSeleccionado,
-      especialidadid: rolSeleccionado === "doctor" ? especialidadSeleccionada : null,
+      especialidad: rolSeleccionado === "doctor"
+        ? { idEspecialidad: parseInt(especialidadSeleccionada) }
+        : null
     };
+    console.log("Datos enviados:", usuarioActualizado);
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
+      method: "POST", // o PUT si has definido una ruta específica
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(usuarioActualizado),
+    });
 
-    // Actualiza el documento
-    await updateDoc(userRef, datosActualizar);
+    if (!response.ok) {
+      throw new Error("Error al guardar el usuario");
+    }
 
     alert("Rol y especialidad actualizados correctamente.");
     setResultadoBusqueda(null);
@@ -161,6 +234,7 @@ const obtenerDoctoresPorEspecialidad = async (especialidadId) => {
   }
 };
 
+//funcion para agregar una especialidad
 const agregarEspecialidad = async () => {
   if (!nuevaEspecialidad.trim()) {
     alert("Ingrese un nombre válido para la especialidad.");
@@ -168,37 +242,32 @@ const agregarEspecialidad = async () => {
   }
 
   try {
-    await addDoc(collection(db, "especialidad"), {
-      nombre: nuevaEspecialidad.trim()
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nombre: nuevaEspecialidad.trim()
+      })
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.mensaje || "Error desconocido");
+    }
+
     alert("Especialidad agregada correctamente.");
     setNuevaEspecialidad("");
   } catch (error) {
     console.error("Error al agregar especialidad:", error);
-    alert("Ocurrió un error al agregar la especialidad.");
+    alert("Ocurrió un error al agregar la especialidad: " + error.message);
   }
 };
 
-const guardarCambiosDoctor = async (doctor) => {
-  try {
-    const fechaComoTimestamp = fechaNacimiento
-      ? Timestamp.fromDate(new Date(fechaNacimiento + "T12:00:00"))
-      : null;
 
-    const doctorRef = doc(db, "users", doctor.id);
-    await updateDoc(doctorRef, {
-      nombre,
-      apellido,
-      cedula,
-      telefono,
-      fechaNacimiento: fechaComoTimestamp,
-    });
-    alert("Cambios guardados correctamente.");
-  } catch (error) {
-    console.error("Error al guardar:", error);
-    alert("Error al guardar los cambios.");
-  }
-};
+
+
 
 
 
@@ -210,48 +279,33 @@ const guardarCambiosDoctor = async (doctor) => {
 
          <div className="select-container">
             <select
-              value={especialidadFiltrada}
-              onChange={(e) => {
-              const selected = e.target.value;
-              setEspecialidadFiltrada(selected);
-              setDoctorSeleccionado(null);
-              setCorreo("");
-              setNombre("");
-              setApellido("");
-              setCedula("");
-              setDireccion("");
-              setTelefono("");
-              setFechaNacimiento("");
-              setEspid("");
-              obtenerDoctoresPorEspecialidad(selected);
-            }}
+  value={especialidadSeleccionada}
+  onChange={(e) => {
+    setEspecialidadSeleccionada(e.target.value);
+    setDoctorSeleccionado(""); // Limpiar doctor al cambiar especialidad
+  }}
+>
+  <option value="">Seleccione una especialidad</option>
+      {especialidades.map((esp) => (
+        <option key={esp.id} value={esp.id}>
+          {esp.nombre}
+        </option>
+      ))}
+    </select>
 
-            >
-              <option value="">Seleccione una especialidad</option>
-              {especialidades.map((esp) => (
-                <option key={esp.id} value={esp.id}>
-                  {esp.nombre}
-                </option>
-              ))}
-            </select>
-
-            {doctoresPorEspecialidad.length > 0 && (
-              <select
-                value={doctorSeleccionado?.id || ""}
-                onChange={(e) => {
-                  const docId = e.target.value;
-                  const doctor = doctoresPorEspecialidad.find((d) => d.id === docId);
-                  setDoctorSeleccionado({ ...doctor });
-                }}
-              >
-                <option value="">Seleccione un doctor</option>
-                {doctoresPorEspecialidad.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    {doctor.nombre} {doctor.apellido}
-                  </option>
-                ))}
-              </select>
-            )}
+    {doctoresFiltrados.length > 0 && (
+      <select
+        value={doctorSeleccionado}
+        onChange={(e) => setDoctorSeleccionado(e.target.value)}
+      >
+        <option value="">Seleccione un doctor</option>
+        {doctoresFiltrados.map((doc) => (
+          <option key={doc.id} value={doc.id}>
+            {doc.nombre} {doc.apellido}
+          </option>
+        ))}
+      </select>
+    )}
           </div>
 
 
@@ -352,9 +406,9 @@ const guardarCambiosDoctor = async (doctor) => {
                           onChange={(e) => setRolSeleccionado(e.target.value)}
                       >
                           <option value="">Seleccione un rol</option>
-                          <option value="admin">Admin</option>
-                          <option value="paciente">Paciente</option>
-                          <option value="doctor">Doctor</option>
+                          <option value="admin">admin</option>
+                          <option value="paciente">paciente</option>
+                          <option value="doctor">doctor</option>
                       </select>
 
                       {rolSeleccionado === 'doctor' && (
