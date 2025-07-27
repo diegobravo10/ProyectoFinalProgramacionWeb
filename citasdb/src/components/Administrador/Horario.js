@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, addDoc,onSnapshot  } from "firebase/firestore";
-import { db } from "../servicios/firebase";
+import { auth, provider, db } from "../servicios/firebase.js";
 import './horario.css';
 
 const HorarioAdmin = () => {
@@ -13,13 +13,20 @@ const HorarioAdmin = () => {
 const [doctores, setDoctores] = useState([]);
 const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
 const [doctorSeleccionado, setDoctorSeleccionado] = useState("");
+const [citas, setCitas] = useState([]);
 
+  //cargar especialidades
   useEffect(() => {
   const cargarEspecialidades = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "especialidad"));
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setEspecialidades(lista);
+      const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades");
+      
+      if (!response.ok) {
+        throw new Error("Error al obtener especialidades");
+      }
+
+      const data = await response.json();
+      setEspecialidades(data);  // El backend ya devuelve la lista en formato esperado
     } catch (error) {
       console.error("Error al cargar especialidades:", error);
     }
@@ -28,64 +35,79 @@ const [doctorSeleccionado, setDoctorSeleccionado] = useState("");
   cargarEspecialidades();
 }, []);
 
-  useEffect(() => {
+//cargar doctores por su especialidad
+useEffect(() => {
   const cargarDoctores = async () => {
-    if (!especialidadSeleccionada) {
-      setDoctores([]);
-      return;
-    }
-
     try {
-      const q = query(collection(db, "users"), where("especialidadid", "==", especialidadSeleccionada));
-      const snapshot = await getDocs(q);
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setDoctores(lista);
+      const user = auth.currentUser;
+      const token = user && await user.getIdToken();
+
+      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+        headers: {
+          'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
+        }
+      });
+
+      if (!res.ok) throw new Error("Error al obtener doctores");
+
+      const doctoresData = await res.json();
+
+      const formatted = doctoresData.map(doc => ({
+        ...doc,
+        id: doc.idUser
+      }));
+
+      setDoctores(formatted);
+
     } catch (error) {
-      console.error("Error al cargar doctores:", error);
+      console.error("Error cargando doctores:", error);
     }
   };
 
   cargarDoctores();
-}, [especialidadSeleccionada]);
+}, []);
+
+// Filtrar doctores por especialidad seleccionada
+const doctoresFiltrados = especialidadSeleccionada 
+  ? doctores.filter(d => d.especialidad?.nombre === especialidadSeleccionada)
+  : doctores;
 
 
-  useEffect(() => {
-    const id = localStorage.getItem("uid");
-    if (id) {
-      setDoctorId(id);
-      cargarHorarios(id);
-    } else {
-      setError("No se encontró doctorId en el localStorage.");
-    }
-  }, []);
 
-const procesarFecha = (fechaFirestore) => {
+
+
+//cargar horarios del doctor
+const cargarHorarios = async (doctorId) => {
   try {
-    if (!fechaFirestore) return null;
+    setCargando(true);
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`);
 
-    if (fechaFirestore.seconds) {
-      return new Date(fechaFirestore.seconds * 1000);
+    if (!response.ok) {
+      throw new Error("Error al obtener horarios");
     }
 
-    if (typeof fechaFirestore.toDate === 'function') {
-      return fechaFirestore.toDate();
-    }
+    const data = await response.json();
 
-    if (typeof fechaFirestore === 'string') {
-      return new Date(fechaFirestore);
-    }
+    // Convertir fechas a objetos Date
+    const lista = data.map(h => ({
+      ...h,
+      fecha: new Date(h.fecha),
+      
+    }));
 
-    if (fechaFirestore instanceof Date) {
-      return fechaFirestore;
-    }
-
-    return null;
+    lista.sort((a, b) => b.fecha?.getTime() - a.fecha?.getTime());
+    setHorarios(lista.slice(0, 30));
   } catch (error) {
-    console.error("Error al procesar fecha:", fechaFirestore, error);
-    return null;
+    console.error("Error al cargar horarios:", error);
+    setError("Error al cargar horarios: " + error.message);
+  } finally {
+    setCargando(false);
   }
+  
 };
-  useEffect(() => {
+
+//funcion para que se muestren los horarios automaticamente
+useEffect(() => {
   if (doctorSeleccionado) {
     cargarHorarios(doctorSeleccionado);
   } else {
@@ -94,86 +116,83 @@ const procesarFecha = (fechaFirestore) => {
 }, [doctorSeleccionado]);
 
 
+//agregar horario
+// Agregar un horario al doctor
+const agregarHorario = async () => {
+  if (!nuevaFechaHora || !doctorSeleccionado) {
+    alert("Por favor complete todos los campos");
+    return;
+  }
 
-const cargarHorarios = (doctorId) => {
   try {
-    setCargando(true);
-    const q = query(collection(db, "horarios"), where("doctorid", "==", doctorId));
+    // Convertir fecha a formato compatible con @JsonFormat del backend
+    const fechaFormateada = nuevaFechaHora.replace("T", " ") + ":00"; // yyyy-MM-dd HH:mm:ss
 
-    // Configura el listener en tiempo real
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        setHorarios([]);
-        setCargando(false);
-        return;
+    const horarioData = {
+      fecha: fechaFormateada,
+      disponible: true,
+      disponibilidad: {
+        doctor: {
+          idUser: parseInt(doctorSeleccionado)
+        }
       }
+    };
 
-      const lista = snapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          fecha: procesarFecha(data.fecha),
-        };
-      });
-
-      lista.sort((a, b) => b.fecha?.getTime() - a.fecha?.getTime());
-      setHorarios(lista.slice(0, 30));
-      setCargando(false);
-    }, (error) => {
-      console.error("Error en el listener de horarios:", error);
-      setError("Error al cargar horarios: " + error.message);
-      setCargando(false);
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/horario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(horarioData)
     });
 
-    // Devuelve la función para cancelar el listener si es necesario
-    return unsubscribe;
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error("Error al agregar horario: " + err);
+    }
+
+    setNuevaFechaHora("");
+    cargarHorarios(doctorSeleccionado);
 
   } catch (error) {
-    console.error("Error al configurar el listener de horarios:", error);
-    setError("Error al configurar el listener: " + error.message);
+    console.error("Error al agregar horario:", error);
+    alert("Error al agregar horario: " + error.message);
+  }
+};
+
+
+
+//cambiar el estado
+  const cambiarEstado = async (horario) => {
+  try {
+    setCargando(true);
+
+    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${horario.idHorario}/disponibilidad`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        disponible: !horario.disponibilidad
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error("Error al actualizar disponibilidad: " + err);
+    }
+
+    await cargarHorarios(doctorSeleccionado);
+  } catch (error) {
+    console.error("Error al cambiar estado:", error);
+    alert("Error al cambiar estado: " + error.message);
+  } finally {
     setCargando(false);
   }
 };
 
-  const agregarHorario = async () => {
-    if (!nuevaFechaHora || !doctorSeleccionado) {
-      alert("Por favor complete todos los campos");
-      return;
-    }
 
-    try {
-      setCargando(true);
-      const fecha = new Date(nuevaFechaHora);
-      await addDoc(collection(db, "horarios"), {
-        doctorid: doctorSeleccionado,
-        fecha,
-        disponibilidad: true
-      });
-      setNuevaFechaHora("");
-      await cargarHorarios(doctorSeleccionado);
-    } catch (error) {
-      console.error("Error al agregar horario:", error);
-      alert("Error al agregar horario: " + error.message);
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const cambiarEstado = async (horario) => {
-    try {
-      setCargando(true);
-      const ref = doc(db, "horarios", horario.id);
-      await updateDoc(ref, { disponibilidad: !horario.disponibilidad });
-      await cargarHorarios(doctorSeleccionado);
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      alert("Error al cambiar estado: " + error.message);
-    } finally {
-      setCargando(false);
-    }
-  };
-
+//eliminar un horario
   const eliminarHorario = async (horario) => {
     if (!window.confirm("¿Está seguro de eliminar este horario?")) return;
     try {
@@ -216,12 +235,11 @@ const cargarHorarios = (doctorId) => {
           Doctor:
           <select
             value={doctorSeleccionado}
-            onChange={(e) => setDoctorSeleccionado(e.target.value)}
-            disabled={cargando || !especialidadSeleccionada}
+            onChange={e => setDoctorSeleccionado(e.target.value)}
           >
-            <option value="">Seleccione un doctor</option>
-            {doctores.map((doc) => (
-              <option key={doc.id} value={doc.id}>{doc.nombre +' ' + doc.apellido}</option>
+            <option value="">-- Seleccione doctor --</option>
+            {doctoresFiltrados.map(d => (
+              <option key={d.id} value={d.id}>{d.nombre} {d.apellido}</option>
             ))}
           </select>
         </label>
@@ -263,10 +281,11 @@ const cargarHorarios = (doctorId) => {
             </tr>
           ) : (
             horarios.map((h) => (
+              
               <tr key={h.id}>
                 <td>{h.fecha?.toLocaleString("es-ES") || "Fecha no válida"}</td>
-                <td style={{ color: h.disponibilidad ? "green" : "red" }}>
-                  {h.disponibilidad ? "Disponible" : "No disponible"}
+                <td style={{ color: h.disponible ? "green" : "red" }}>
+                  {h.disponible ? "Disponible" : "No disponible"}
                 </td>
                 <td>
                   <button onClick={() => cambiarEstado(h)} disabled={cargando}>

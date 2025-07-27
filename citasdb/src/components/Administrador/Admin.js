@@ -515,12 +515,7 @@ const citasFiltradas = citas.filter(cita => {
                 </>
               ) : (
                 <>
-                  <button onClick={() => {
-                    setEditandoCitaId(cita.idCita);
-                    setDescripcionEdit(cita.descripcion);
-                    setFechaHoraEdit(horario ? timestampToDateTimeInput(horario.fecha) : "");
-                    setErrorValidacion("");
-                  }}>Modificar</button>
+
 
                   <button onClick={() => actualizarEstadoCita(cita.idCita, "confirmado", horario?.idHorario)}>Confirmar</button>
                   <button onClick={() => actualizarEstadoCita(cita.idCita, "rechazado", horario?.idHorario)}>Rechazar</button>
