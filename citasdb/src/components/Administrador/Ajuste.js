@@ -104,7 +104,7 @@ const doctoresFiltrados = especialidadSeleccionada
     setEspid(doc.especialidad?.nombre || "");
     setIdDoctor(doc.idUser || "");
     setUIdDoctor(doc.uid || "");
-    setEspDoctor(doc.especialidad.idEspecialidad || "");
+    setEspDoctor(doc.especialidad || "");
         if (doc.fechaNacimiento) {
           const fecha = new Date(doc.fechaNacimiento);
           const yyyy = fecha.getFullYear();
@@ -124,21 +124,20 @@ const guardarCambiosDoctor = async () => {
   try {
     
     const data = {
-      //idEspecialidad: espDoctor,
-      //idUser: idDoctor,
+      especialidad: espDoctor,
+      idUser: idDoctor,
       correo,
       nombre,
       apellido,
       direccion,
       cedula,
       telefono,
-      //dtype: 'Doctor',
-      rol: 'doctor', // si es necesario
-      uid: uidDoctor, // si es necesario
+      rol: 'doctor', 
+      uid: uidDoctor, 
       fechaNacimiento
     };
     console.log("Datos enviados:", data);
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/usuarios`, {
+    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -207,11 +206,12 @@ setResultadoBusqueda(usuario);
       ...resultadoBusqueda,
       rol: rolSeleccionado,
       especialidad: rolSeleccionado === "doctor"
-        ? { idEspecialidad: parseInt(especialidadSeleccionada) }
+        ? especialidadSeleccionada
         : null
     };
+
     console.log("Datos enviados:", usuarioActualizado);
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
       method: "POST", // o PUT si has definido una ruta específica
       headers: {
         "Content-Type": "application/json",
@@ -412,21 +412,40 @@ const agregarEspecialidad = async () => {
                       </select>
 
                       {rolSeleccionado === 'doctor' && (
-                          <>
-                              <label htmlFor="especialidad" className="select-label">Especialidad:</label>
-                              <select
-                                  id="especialidad"
-                                  className="change-type-select"
-                                  value={especialidadSeleccionada}
-                                  onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
-                              >
-                                  <option value="">Seleccione la especialidad</option>
-                                  {especialidades.map((esp) => (
-                                      <option key={esp.id} value={esp.id}>{esp.nombre}</option>
-                                  ))}
-                              </select>
-                          </>
-                      )}
+                      <>
+                        <label htmlFor="especialidad" className="select-label">Especialidad:</label>
+                        <select
+                          id="especialidad"
+                          className="change-type-select"
+                          value={especialidadSeleccionada?.idEspecialidad || ""}
+                          onChange={(e) => {
+                            const id = Number(e.target.value); // usar Number en lugar de parseInt por claridad
+
+                            // Validación
+                            if (!id || isNaN(id)) {
+                              setEspecialidadSeleccionada(null);
+                              return;
+                            }
+
+                            // Buscar objeto especialidad completo
+                            const especialidadCompleta = especialidades.find(
+                              (esp) => esp.idEspecialidad === id
+                            );
+
+                            setEspecialidadSeleccionada(especialidadCompleta);
+                          }}
+                        >
+                          <option value="">Seleccione la especialidad</option>
+                          {especialidades.map((esp) => (
+                            <option key={esp.idEspecialidad} value={esp.idEspecialidad}>
+                              {esp.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+
+
 
                       <button className="save-button" onClick={guardarCambiosAdmin}>
                           Guardar Cambios
