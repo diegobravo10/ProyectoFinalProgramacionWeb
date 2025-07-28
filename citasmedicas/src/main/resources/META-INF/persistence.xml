@@ -30,7 +30,7 @@
              Hibernate property instead:
              <property name="hibernate.hbm2ddl.auto" value="create-drop" />
          -->
-         <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+         <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
          <property name="jakarta.persistence.schema-generation.create-source" value="metadata"/>
          <property name="jakarta.persistence.schema-generation.drop-source" value="metadata"/>
 		 <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>

@@ -41,7 +41,7 @@ public class InciarBD {
 	public void init() throws Exception {
 		System.out.println("Inicializando BD");
 		
-		Especialidad esp = new Especialidad();
+		/*Especialidad esp = new Especialidad();
 		esp.setNombre("General");
 		
 		daoEsp.insert(esp);
@@ -95,7 +95,7 @@ public class InciarBD {
         cita.setPaciente(persona);
         cita.setHorario(horario);
 		
-        daoCM.insert(cita);
+        daoCM.insert(cita);*/
    
 
 	}
