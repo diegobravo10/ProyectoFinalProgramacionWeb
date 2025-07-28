@@ -146,7 +146,7 @@ const eliminarHorario = async (idHorario) => {
         onChange={(e) => setIntervalo(e.target.value)} 
       />
 
-      <button  onClick={crearDisponibilidad}>Crear Disponibilidad</button>
+      <button  onClick={crearDisponibilidad}>Agregar</button>
     </div>
 
 

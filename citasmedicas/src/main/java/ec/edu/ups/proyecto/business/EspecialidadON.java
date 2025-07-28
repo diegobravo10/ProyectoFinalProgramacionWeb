@@ -4,6 +4,7 @@ import java.util.List;
 
 import ec.edu.ups.proyecto.DAO.EspecialidadDAO;
 import ec.edu.ups.proyecto.citasmedicas.Especialidad;
+import ec.edu.ups.proyecto.services.CitasStreamResource;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 
@@ -12,6 +13,8 @@ public class EspecialidadON {
 	
 	@Inject
 	private EspecialidadDAO daoEspecialidad;
+	@Inject
+	 private CitasStreamResource stream;
 	
 	
 
@@ -24,6 +27,10 @@ public class EspecialidadON {
 		} else {
 			daoEspecialidad.update(p);
 		}
+		
+		String citaJson = "{ \"id\": " + p.getIdEspecialidad() + 
+                ", \"descripcion\": \"" + p.getNombre() + "\" }";
+		stream.notificarNuevaCita(citaJson);
 
 		
 	}

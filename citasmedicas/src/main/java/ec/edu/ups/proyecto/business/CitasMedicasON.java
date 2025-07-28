@@ -5,6 +5,7 @@ import java.util.List;
 import ec.edu.ups.proyecto.DAO.CitasMedicasDAO;
 import ec.edu.ups.proyecto.citasmedicas.CitasMedicas;
 import ec.edu.ups.proyecto.citasmedicas.Horario;
+import ec.edu.ups.proyecto.services.CitasStreamResource;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 
@@ -17,6 +18,9 @@ public class CitasMedicasON {
 	@Inject 
 	private HorarioON onHorario;
 	
+	@Inject
+	 private CitasStreamResource stream;
+
 	public void guardarCitasMedicas(CitasMedicas p) {
 		CitasMedicas pe = daoCM.read(p.getIdCita());	
 		if (pe == null) {
@@ -30,6 +34,11 @@ public class CitasMedicasON {
 			h.setDisponible(false);
 			onHorario.guardarHorario(h);
 		}
+		
+		String citaJson = "{ \"id\": " + p.getIdCita() + 
+                ", \"descripcion\": \"" + p.getDescripcion() + "\" }";
+		stream.notificarNuevaCita(citaJson);
+		
 	
 	}
 	
@@ -64,6 +73,10 @@ public class CitasMedicasON {
 	        horario.setDisponible(disponible);
 	        onHorario.guardarHorario(horario);
 	    }
+	    
+	    String citaJson = "{ \"id\": " + idCita + 
+                ", \"estado\": \"" + nuevoEstado + "\" }";
+		stream.notificarNuevaCita(citaJson);
 	}
 	
 	public CitasMedicas buscarPorId(int idCita) {

@@ -175,6 +175,28 @@ const cargarCitas = async () => {
   }
 };
 
+useEffect(() => {
+  // 1. Cargar las citas la primera vez
+  cargarCitas();
+
+  // 2. Abrir conexión SSE
+  const eventSource = new EventSource('http://localhost:8080/citasmedicas/citasmedicas/stream-citas');
+
+  // 3. Escuchar evento "nueva-cita" del backend
+  eventSource.addEventListener('nueva-cita', (event) => {
+    console.log("Nueva cita recibida:", event.data);
+    cargarCitas(); // Refrescar citas automáticamente
+  });
+
+  return () => {
+    eventSource.close();
+  };
+}, []);
+
+
+
+
+
 // 2. Usar useEffect para cargar las citas al montar
 useEffect(() => {
   cargarCitas();

@@ -180,8 +180,7 @@ const Admin = () => {
 }, []);
 
 
-  // Cargar todas las citas con sus datos relacionados
-  useEffect(() => {
+useEffect(() => {
   const cargarTodasLasCitas = async () => {
     try {
       const user = auth.currentUser;
@@ -189,24 +188,35 @@ const Admin = () => {
 
       const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/citas", {
         headers: {
-          'Authorization': 'Bearer ' + token // si tu backend lo requiere
+          'Authorization': 'Bearer ' + token
         }
       });
 
       if (!res.ok) throw new Error("No se pudieron obtener las citas");
 
       const citas = await res.json();
-
-      // Si cada cita ya trae paciente, horario y doctor:
       setCitas(citas);
-
     } catch (error) {
       console.error("Error al cargar las citas:", error);
     }
   };
 
+  // 1. Cargar inicialmente
   cargarTodasLasCitas();
+
+  // 2. Suscribirse a eventos SSE
+  const eventSource = new EventSource("http://localhost:8080/citasmedicas/citasmedicas/stream-citas");
+
+  eventSource.addEventListener("nueva-cita", (event) => {
+    console.log("Evento nueva-cita recibido:", event.data);
+    cargarTodasLasCitas(); // vuelve a cargar cuando llega evento
+  });
+
+  return () => {
+    eventSource.close();
+  };
 }, []);
+
 
 
 

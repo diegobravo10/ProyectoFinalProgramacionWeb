@@ -264,7 +264,7 @@ const crearDisponibilidad = async () => {
         onChange={(e) => setIntervalo(e.target.value)} 
       />
 
-      <button  onClick={crearDisponibilidad}>Crear Disponibilidad</button>
+      <button className="dispo" onClick={crearDisponibilidad}>Agregar</button>
     </div>
 
        
