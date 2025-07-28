@@ -211,13 +211,14 @@ setResultadoBusqueda(usuario);
     };
 
     console.log("Datos enviados:", usuarioActualizado);
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
-      method: "POST", // o PUT si has definido una ruta específica
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(usuarioActualizado),
-    });
+    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/cambiar-rol", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(usuarioActualizado),
+      });
+
 
     if (!response.ok) {
       throw new Error("Error al guardar el usuario");

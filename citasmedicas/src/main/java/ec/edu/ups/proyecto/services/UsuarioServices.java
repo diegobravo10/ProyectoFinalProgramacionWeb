@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.firebase.auth.FirebaseToken;
+import com.google.gson.JsonObject;
 
 import ec.edu.ups.proyecto.business.UsuariosON;
 import ec.edu.ups.proyecto.citasmedicas.Usuario;
+import ec.edu.ups.proyecto.citasmedicas.UsuarioDTO;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -137,6 +139,26 @@ public class UsuarioServices {
         }
         return Response.ok(usuario).build();
     }
+	
+	
+	@POST
+	@Path("/cambiar-rol")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response cambiarRol(UsuarioDTO dto) {
+	    try {
+	        onContactos.cambiarRol(dto);
+	        return Response.ok(new MensajeJSON("success", "Rol actualizado correctamente")).build();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                .entity(new MensajeJSON("Error", e.getMessage()))
+	                .build();
+	    }
+	}
+
+
+
 
 
 }

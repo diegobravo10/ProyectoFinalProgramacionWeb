@@ -3,8 +3,11 @@ package ec.edu.ups.proyecto.business;
 
 import java.util.List;
 
+import com.google.gson.JsonObject;
+
 import ec.edu.ups.proyecto.DAO.UsuarioDAO;
 import ec.edu.ups.proyecto.citasmedicas.Usuario;
+import ec.edu.ups.proyecto.citasmedicas.UsuarioDTO;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 
@@ -61,6 +64,10 @@ public class UsuariosON {
 			return daoPersona.findById(id);
 		
 		}
+	
+	public void cambiarRol(UsuarioDTO  u) throws Exception {
+		daoPersona.cambiarRolUsuario(u);
+	}
 	
 	
 
