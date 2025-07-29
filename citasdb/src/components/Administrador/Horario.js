@@ -155,6 +155,7 @@ const crearDisponibilidad = async () => {
     if (!response.ok) throw new Error("Error al crear disponibilidad");
     alert("Disponibilidad creada correctamente");
     cargarHorarios(localStorage.getItem("idUser"))
+    cargarHorarios(doctorSeleccionado);
   } catch (error) {
     console.error("Error:", error);
     alert("Ocurrió un error");
