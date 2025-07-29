@@ -122,6 +122,7 @@ public class UsuarioDAO {
 	    } else {
 	        // Para otros roles solo actualizar el campo rol
 	        existente.setRol(dto.getRol());
+	        existente.setUid(dto.getUid());
 	        update(existente);
 	    }
 	}

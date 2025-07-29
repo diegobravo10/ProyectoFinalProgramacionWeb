@@ -13,7 +13,7 @@ const AdminReportes = () => {
     const cargarEspecialidades = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/citasmedicas/citasmedicas/especialidades"
+          "https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades"
         );
         setEspecialidades(response.data || []);
       } catch (error) {
@@ -30,7 +30,7 @@ const AdminReportes = () => {
       return;
     }
 
-    let endpoint = `http://localhost:8080/citasmedicas/citasmedicas/reportes/${tipo}`;
+    let endpoint = `https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/reportes/${tipo}`;
     let params = { fechaInicio, fechaFin };
 
     if (tipo === "doctor") {

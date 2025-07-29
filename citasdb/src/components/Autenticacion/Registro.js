@@ -57,7 +57,7 @@ const Registro = () => {
     });
 
     // Enviar al backend (asegúrate de que la URL sea correcta)
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
+    const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -109,7 +109,14 @@ const Registro = () => {
         </div>
         <div>
           <label>Cédula:</label>
-          <input type="text" value={cedula} onChange={(e) => setCedula(e.target.value)} />
+          <input
+            type="text"
+            value={cedula}
+            onChange={(e) => setCedula(e.target.value)}
+            maxLength={10}
+            pattern="\d{10}"
+            title="Ingrese solo números (10 dígitos)"
+          />
         </div>
         <div>
           <label>Dirección:</label>

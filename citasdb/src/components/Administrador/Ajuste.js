@@ -34,7 +34,7 @@ const [espDoctor, setEspDoctor] = useState('');
   useEffect(() => {
   const cargarEspecialidades = async () => {
     try {
-      const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades");
+      const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades");
       
       if (!response.ok) {
         throw new Error("Error al obtener especialidades");
@@ -57,7 +57,7 @@ useEffect(() => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor", {
         headers: {
           'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
         }
@@ -137,7 +137,7 @@ const guardarCambiosDoctor = async () => {
       fechaNacimiento
     };
     console.log("Datos enviados:", data);
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor`, {
+    const res = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -162,7 +162,7 @@ const guardarCambiosDoctor = async () => {
 
 const buscarPorCedula = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/usuarios/cedula/${busquedaCedula}`);
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/cedula/${busquedaCedula}`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -211,7 +211,7 @@ setResultadoBusqueda(usuario);
     };
 
     console.log("Datos enviados:", usuarioActualizado);
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/cambiar-rol", {
+    const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/cambiar-rol", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -243,7 +243,7 @@ const agregarEspecialidad = async () => {
   }
 
   try {
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades", {
+    const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

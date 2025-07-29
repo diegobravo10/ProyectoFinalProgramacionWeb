@@ -43,7 +43,7 @@ useEffect(() => {
     setDocId(storedId);
     const cargarDatos = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
+        const response = await axios.get(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
         
         const datos = response.data;
         setNombre(datos.nombre || "");
@@ -148,7 +148,7 @@ const cargarCitas = async () => {
 
   try {
     const response = await axios.get(
-      `http://localhost:8080/citasmedicas/citasmedicas/citas/doctor/${storedId}/conDetalles`
+      `https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/doctor/${storedId}/conDetalles`
     );
     const citasConDetalles = response.data;
 
@@ -180,7 +180,7 @@ useEffect(() => {
   cargarCitas();
 
   // 2. Abrir conexión SSE
-  const eventSource = new EventSource('http://localhost:8080/citasmedicas/citasmedicas/stream-citas');
+  const eventSource = new EventSource('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/stream-citas');
 
   // 3. Escuchar evento "nueva-cita" del backend
   eventSource.addEventListener('nueva-cita', (event) => {
@@ -205,7 +205,7 @@ useEffect(() => {
 // 3. Modificar actualizarEstadoCita para llamar a cargarCitas después
 const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
   try {
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -259,7 +259,7 @@ useEffect(() => {
     };
      console.log("Enviando body para editar cita:", body); 
 
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -289,7 +289,7 @@ useEffect(() => {
   const cargarHorarios = async (id) => {
   try {
     const response = await fetch(
-      `http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${id}/horarios`
+      `https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario/doctor/${id}/horarios`
     );
     if (!response.ok) throw new Error("Error al cargar horarios");
 
@@ -327,11 +327,16 @@ const descargarReporte = async (tipo, fechaInicio, fechaFin) => {
     alert("La fecha fin no puede ser anterior a la fecha inicio.");
     return;
   }
-  const endpoint = `http://localhost:8080/citasmedicas/citasmedicas/reportes/${tipo}`;
+  const endpoint = `https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/reportes/${tipo}`;
 
   const params = { fechaInicio, fechaFin };
   if (tipo === "doctor") {
-    const doctorId = parseInt(localStorage.getItem("cedula"), 10);
+    const doctorId = localStorage.getItem("cedula");
+    console.log("doctorId desde localStorage:", doctorId);
+    if (!doctorId) {
+      alert("No hay cédula guardada en localStorage. Debe iniciar sesión o ingresar la cédula.");
+      return;
+    }
     params.doctorId = doctorId;
 
   }

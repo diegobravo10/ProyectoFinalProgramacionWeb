@@ -38,7 +38,7 @@ const Admin = () => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/me", {
         headers: {
           'Authorization': 'Bearer ' + token
         }
@@ -112,7 +112,7 @@ const Admin = () => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades", {
         headers: {
           'Authorization': 'Bearer ' + token // si tu backend requiere autenticación
         }
@@ -153,7 +153,7 @@ const Admin = () => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor", {
         headers: {
           'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
         }
@@ -186,7 +186,7 @@ useEffect(() => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/citas", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas", {
         headers: {
           'Authorization': 'Bearer ' + token
         }
@@ -205,7 +205,7 @@ useEffect(() => {
   cargarTodasLasCitas();
 
   // 2. Suscribirse a eventos SSE
-  const eventSource = new EventSource("http://localhost:8080/citasmedicas/citasmedicas/stream-citas");
+  const eventSource = new EventSource("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/stream-citas");
 
   eventSource.addEventListener("nueva-cita", (event) => {
     console.log("Evento nueva-cita recibido:", event.data);
@@ -227,7 +227,7 @@ const actualizarEstadoCita = async (idCita, nuevoEstado, idHorario) => {
     const user = auth.currentUser;
     const token = user && await user.getIdToken();
 
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/${idCita}/estado`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -338,7 +338,7 @@ const horarioActual = citaActual.horario;
     // Convertir fecha a formato ISO para backend (si necesitas enviar la fecha)
     // Si solo estás enviando el id del nuevo horario, este paso no es necesario.
 
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/${idCita}/editar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

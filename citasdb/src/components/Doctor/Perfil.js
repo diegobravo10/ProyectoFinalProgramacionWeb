@@ -28,7 +28,7 @@ const Perfil = () => {
   if (storedUid) {
     const cargarDatos = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedUid}`);
+        const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor/uid/${storedUid}`);
         if (!response.ok) {
           throw new Error("No se encontró el doctor");
         }
@@ -110,7 +110,7 @@ const handleGuardar = async () => {
       }
     };
 
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+    const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor", {
       method: "POST", // Usa "PUT" si tienes implementado update
       headers: {
         "Content-Type": "application/json"

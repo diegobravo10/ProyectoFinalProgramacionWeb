@@ -33,7 +33,7 @@ const Navbar = () => {
       try {
         const token = await user.getIdToken();
 
-        const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+        const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/me", {
           headers: {
             Authorization: "Bearer " + token,
           },

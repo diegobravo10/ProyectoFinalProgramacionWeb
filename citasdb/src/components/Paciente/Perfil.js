@@ -24,7 +24,7 @@ useEffect(() => {
       const token = await user.getIdToken();
 
       try {
-        const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios/me", {
+        const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/me", {
           headers: {
             'Authorization': 'Bearer ' + token
           }
@@ -86,7 +86,7 @@ useEffect(() => {
       uid: localStorage.getItem("uid"),// puedes enviar como string ISO: "2025-07-19"
     };
 
-    const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/usuarios", {
+    const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

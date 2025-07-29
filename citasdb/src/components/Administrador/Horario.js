@@ -23,7 +23,7 @@ const [diaSemana, setDiaSemana] = useState("MONDAY");
   useEffect(() => {
   const cargarEspecialidades = async () => {
     try {
-      const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/especialidades");
+      const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades");
       
       if (!response.ok) {
         throw new Error("Error al obtener especialidades");
@@ -46,7 +46,7 @@ useEffect(() => {
       const user = auth.currentUser;
       const token = user && await user.getIdToken();
 
-      const res = await fetch("http://localhost:8080/citasmedicas/citasmedicas/doctor", {
+      const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor", {
         headers: {
           'Authorization': 'Bearer ' + token // solo si tu backend lo requiere
         }
@@ -94,7 +94,7 @@ const doctoresFiltrados = especialidadSeleccionada
 const cargarHorarios = async (doctorId) => {
   try {
     setCargando(true);
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`);
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`);
 
     if (!response.ok) {
       throw new Error("Error al obtener horarios");
@@ -144,7 +144,7 @@ const crearDisponibilidad = async () => {
 
   try {
     console.log("Datos enviados:", body);
-    const response = await fetch("http://localhost:8080/citasmedicas/citasmedicas/disponibilidad/disponibilidades", {
+    const response = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/disponibilidad/disponibilidades", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -166,7 +166,7 @@ const crearDisponibilidad = async () => {
 //cambiar el estado
   const cambiarEstado = async (horario) => {
   try {
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${horario.idHorario}/disponibilidad`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario/${horario.idHorario}/disponibilidad`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -188,7 +188,7 @@ const crearDisponibilidad = async () => {
 //eliminar un horario
   const eliminarHorario = async (idHorario) => {
   try {
-    const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/${idHorario}`, {
+    const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario/${idHorario}`, {
       method: "DELETE"
     });
 

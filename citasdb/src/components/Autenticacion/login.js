@@ -14,7 +14,7 @@ const Login = () => {
     const idToken = await user.getIdToken();
 
     // Llamar a backend con token para validar sesión
-    const response = await fetch('http://localhost:8080/citasmedicas/citasmedicas/usuarios/me', {
+    const response = await fetch('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios/me', {
       headers: {
         'Authorization': 'Bearer ' + idToken,
       }

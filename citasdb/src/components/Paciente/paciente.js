@@ -37,7 +37,7 @@ useEffect(() => {
         await Promise.all([cargarEspecialidades(token), cargarDoctores(token)]);
 
         // === SUSCRIPCIÓN SSE ===
-        const eventSource = new EventSource('http://localhost:8080/citasmedicas/api/stream-doctores');
+        const eventSource = new EventSource('https://citasmedicas.ngrok.app/citasmedicas/api/stream-doctores');
 
         eventSource.addEventListener('nueva-cita', async (event) => {
           console.log("Notificación doctor:", event.data);
@@ -57,7 +57,7 @@ useEffect(() => {
 
 
 const cargarEspecialidades = async (token) => {
-  const res = await fetch('http://localhost:8080/citasmedicas/citasmedicas/especialidades', {
+  const res = await fetch('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/especialidades', {
     headers: { 'Authorization': 'Bearer ' + token }
   });
   if (!res.ok) throw new Error("Error al cargar especialidades");
@@ -66,7 +66,7 @@ const cargarEspecialidades = async (token) => {
 };
 
 const cargarDoctores = async (token) => {
-  const res = await fetch('http://localhost:8080/citasmedicas/citasmedicas/doctor', {
+  const res = await fetch('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor', {
     headers: { 'Authorization': 'Bearer ' + token }
   });
   if (!res.ok) throw new Error("Error al cargar doctores");
@@ -86,13 +86,13 @@ const fetchCitasAndHorarios = async () => {
     if (!token) return;
 
     // Obtener citas médicas del paciente
-    const citasRes = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas/paciente/${cedulaP}`, {
+    const citasRes = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas/paciente/${cedulaP}`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const citasData = await citasRes.json();
 
     // Obtener todos los horarios
-    const horariosRes = await fetch('http://localhost:8080/citasmedicas/citasmedicas/horario', {
+    const horariosRes = await fetch('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const horariosData = await horariosRes.json();
@@ -131,7 +131,7 @@ useEffect(() => {
   fetchCitasAndHorarios();
 
   // 2) suscribirse a eventos SSE
-  const eventSource = new EventSource('http://localhost:8080/citasmedicas/citasmedicas/stream-citas');
+  const eventSource = new EventSource('https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/stream-citas');
 
   eventSource.addEventListener('nueva-cita', (event) => {
     console.log("Evento nueva-cita recibido:", event.data);
@@ -174,7 +174,7 @@ const fetchAvailableSchedules = async (doctorId) => {
     const user = auth.currentUser;
     const token = user && await user.getIdToken();
 
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`, {
+    const res = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/horario/doctor/${doctorId}/horarios`, {
       headers: {
         'Authorization': 'Bearer ' + token
       }
@@ -233,7 +233,7 @@ const fetchAvailableSchedules = async (doctorId) => {
       estado: 'pendiente'
     };
     console.log("Cita enviada:", citaData);
-    const res = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/citas`, {
+    const res = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/citas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

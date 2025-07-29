@@ -32,7 +32,7 @@ useEffect(() => {
 
     const cargarDatos = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
+        const response = await fetch(`https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/doctor/uid/${storedId}`);
 
         if (!response.ok) {
           throw new Error("Error en la solicitud");
