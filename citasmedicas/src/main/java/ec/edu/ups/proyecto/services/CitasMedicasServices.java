@@ -165,10 +165,10 @@ public class CitasMedicasServices {
 	                    String asunto = "Confirmación de su cita médica";
 
 	                    // Mensaje con doctor y fecha formateada
-	                    String cuerpo = "Estimado/a " + cita.getPaciente().getNombre() + ",\n\n" +
+	                    String cuerpo = "Estimado/a " + cita.getPaciente().getNombre().split(" ")[0] +' ' + cita.getPaciente().getApellido().split(" ")[0]+ ",\n\n" +
 	                            "Su cita médica ha sido confirmada.\n\n" +
 	                            "Detalles de la cita:\n" +
-	                            "Doctor: Dr. " + cita.getDoctor().getNombre() + " " + cita.getDoctor().getApellido() + "\n" +
+	                            "Doctor: Dr. " + cita.getDoctor().getNombre().split(" ")[0] + " " + cita.getDoctor().getApellido().split(" ")[0] + "\n" +
 	                            "Fecha y hora: " + cita.getHorario().getFecha() + "\n\n" +
 	                            "Por favor, llegue con 15 minutos de anticipación.\n\n" +
 	                            "Gracias por confiar en nuestro servicio.\n" +
@@ -188,8 +188,8 @@ public class CitasMedicasServices {
 	                        telefono = "+593" + telefono.substring(1); // asumiendo que guarda 09xxxxxxxx
 	                    }
 
-	                    String mensaje = "Hola " + cita.getPaciente().getNombre() +
-	                                     ", su cita con el Dr. " + cita.getDoctor().getNombre() +
+	                    String mensaje = "Hola " + cita.getPaciente().getNombre().split(" ")[0] +' ' + cita.getPaciente().getApellido().split(" ")[0]+
+	                                     ", su cita con el Dr. " + cita.getDoctor().getNombre().split(" ")[0] + ' ' +cita.getDoctor().getApellido().split(" ")[0] +
 	                                     " ha sido confirmada para el " + cita.getHorario().getFecha() + ".";
 	                    whatsappService.enviarMensaje(telefono, mensaje);
 	                }

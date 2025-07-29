@@ -7,6 +7,8 @@ import './doctor.css'
 const Admin = () => {
   const [especialidades, setEspecialidades] = useState([]);
   const [citas, setCitas] = useState([]);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState("");
+
 
   // Datos relacionados para mostrar nombres, especialidades y horarios
   const [pacientesMap, setPacientesMap] = useState({});
@@ -396,8 +398,14 @@ const citasFiltradas = citas.filter(cita => {
     return false;
   }
 
+  // Filtro por estado
+  if (estadoSeleccionado && cita.estado !== estadoSeleccionado) {
+    return false;
+  }
+
   return true;
 });
+
 
 
 
@@ -438,7 +446,23 @@ const citasFiltradas = citas.filter(cita => {
       </div>
       
       
-      <h2>Citas Médicas {especialidadSeleccionada || doctorSeleccionado ? '(Filtradas)' : '(Todas)'}</h2>
+      <div className="header-citas">
+        <h2>Citas Médicas (Filtradas)</h2>
+        <div className="filtro-estado">
+          <label>Estado:</label>
+          <select
+            value={estadoSeleccionado}
+            onChange={(e) => setEstadoSeleccionado(e.target.value)}
+          >
+            <option value="">-- Todos --</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="rechazado">Rechazado</option>
+          </select>
+        </div>
+      </div>
+
+
       <table>
         <thead>
           <tr>

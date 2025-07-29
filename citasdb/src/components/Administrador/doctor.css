@@ -135,6 +135,36 @@ label {
   font-weight: bold; /* O cualquier otro estilo */
 }
 
+.header-citas {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* 3 columnas */
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.header-citas h2 {
+  grid-column: 2; /* Columna del medio */
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.filtro-estado {
+  grid-column: 3; /* Columna derecha */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end; /* Empuja a la derecha */
+}
+
+
+
 
 
 
