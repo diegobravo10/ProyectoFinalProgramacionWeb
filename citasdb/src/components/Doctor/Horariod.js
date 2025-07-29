@@ -33,17 +33,20 @@ const cargarHorarios = async (id) => {
 
     const data = await response.json();
 
-    // Convierte la fecha si es necesario
-    const lista = data.map(h => ({
-      ...h,
-      fecha: new Date(h.fecha)
-    }));
+
+    const lista = data
+      .map(h => ({
+        ...h,
+        fecha: new Date(h.fecha)
+      }))
+      .sort((a, b) => b.fecha - a.fecha);
 
     setHorarios(lista);
   } catch (error) {
     console.error("Error al cargar horarios:", error);
   }
 };
+
 
 
 

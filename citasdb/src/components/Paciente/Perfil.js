@@ -83,7 +83,7 @@ useEffect(() => {
       telefono,
       fechaNacimiento,
       rol,
-      uid: localStorage.getItem("uid"),// puedes enviar como string ISO: "2025-07-19"
+      uid: localStorage.getItem("uid"),
     };
 
     const res = await fetch("https://citasmedicas.ngrok.app/citasmedicas/citasmedicas/usuarios", {
