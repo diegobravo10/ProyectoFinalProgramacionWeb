@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, query, collection, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../servicios/firebase";
-import axios from 'axios';
-
-import { Timestamp } from "firebase/firestore";
 
 
 

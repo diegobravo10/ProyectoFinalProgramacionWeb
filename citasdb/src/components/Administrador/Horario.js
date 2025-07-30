@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, addDoc,onSnapshot  } from "firebase/firestore";
-import { auth, provider, db } from "../servicios/firebase.js";
+import { auth} from "../servicios/firebase.js";
 import './horario.css';
 
 const HorarioAdmin = () => {

@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Singleton
-@Startup  // Asegura que el bean se inicializa al arrancar la aplicación
+@Startup  
 public class NotificacionScheduler {
 
     @Inject

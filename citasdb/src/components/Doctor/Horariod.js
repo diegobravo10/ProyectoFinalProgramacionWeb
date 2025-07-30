@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, addDoc, orderBy, limit, onSnapshot  } from "firebase/firestore";
-import { db } from "../servicios/firebase";
 import './horariod.css'
 
 const Horario = () => {
   const [horarios, setHorarios] = useState([]);
-  const [nuevaFechaHora, setNuevaFechaHora] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [diaSemana, setDiaSemana] = useState("MONDAY");
   const [horaInicio, setHoraInicio] = useState("");

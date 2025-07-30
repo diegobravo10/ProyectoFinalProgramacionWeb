@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where, updateDoc, doc, getDoc, addDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, query, where} from "firebase/firestore";
 import { auth, provider, db } from "../servicios/firebase.js";
 
 import './doctor.css'
@@ -9,11 +9,6 @@ const Admin = () => {
   const [citas, setCitas] = useState([]);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState("");
 
-
-  // Datos relacionados para mostrar nombres, especialidades y horarios
-  const [pacientesMap, setPacientesMap] = useState({});
-  const [horariosMap, setHorariosMap] = useState({});
-  const [doctoresMap, setDoctoresMap] = useState({});
   const [especialidadesMap, setEspecialidadesMap] = useState({});
 
   const [editandoCitaId, setEditandoCitaId] = useState(null);

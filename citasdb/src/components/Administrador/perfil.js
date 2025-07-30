@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
-import { auth, provider, db } from "../servicios/firebase.js";
-import { Timestamp } from "firebase/firestore";
+import { auth} from "../servicios/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 import './Ajuste.css';
 const PerfilD = () => {
@@ -13,8 +11,6 @@ const PerfilD = () => {
   const [telefono, setTelefono] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [docId, setDocId] = useState("");
-  const [especialidades, setEspecialidades] = useState([]);
-
 
 
 
@@ -62,23 +58,6 @@ useEffect(() => {
 }, []);
 
 
-
-useEffect(() => {
-  const obtenerEspecialidades = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "especialidad"));
-      const lista = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        nombre: doc.data().nombre
-      }));
-      setEspecialidades(lista);
-    } catch (error) {
-      console.error("Error al obtener especialidades:", error);
-    }
-  };
-
-  obtenerEspecialidades();
-}, []);
 
 
 //Funcion para guardar los datos modificados

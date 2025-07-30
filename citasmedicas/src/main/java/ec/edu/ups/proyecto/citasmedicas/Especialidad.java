@@ -12,9 +12,7 @@ public class Especialidad {
 	private int idEspecialidad;
     private String nombre;
     
-    //@OneToMany(mappedBy = "especialidad", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    //private List<Doctor> doctores;
-    
+
 
     public int getIdEspecialidad() {
         return idEspecialidad;
@@ -32,18 +30,7 @@ public class Especialidad {
         this.nombre = nombre;
     }
 
-	/*public List<Doctor> getDoctores() {
-		return doctores;
-	}
 
-	public void setDoctores(List<Doctor> doctores) {
-		this.doctores = doctores;
-	}
-
-	@Override
-	public String toString() {
-		return "Especialidad [idEspecialidad=" + idEspecialidad + ", nombre=" + nombre + ", doctores=" + doctores + "]";
-	}*/
 	
 
 }

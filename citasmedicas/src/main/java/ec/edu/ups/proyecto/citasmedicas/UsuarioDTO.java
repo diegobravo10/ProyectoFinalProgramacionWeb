@@ -13,7 +13,7 @@ public class UsuarioDTO {
     private String rol;
     private String telefono;
     private String uid;
-    private EspecialidadDTO especialidad;  // null si no es doctor
+    private EspecialidadDTO especialidad; 
 
     // Getters y setters
 

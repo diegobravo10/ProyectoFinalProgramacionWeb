@@ -2,8 +2,6 @@ import React from 'react';
 import { getAuth, signOut } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { doc, getDoc} from "firebase/firestore";
-import { db } from "../servicios/firebase";
 import '../Paciente/Navbar.css';
 const NavbarD = () => {
 

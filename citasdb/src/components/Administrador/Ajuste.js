@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc, query, collection, where, getDocs, addDoc,onSnapshot  } from "firebase/firestore";
-import { auth, provider, db } from "../servicios/firebase.js";
+import { auth} from "../servicios/firebase.js";
 import { FaSearch } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa";
-import { Timestamp } from "firebase/firestore";
 
 import './Ajuste.css';
 const Ajuste = () => {

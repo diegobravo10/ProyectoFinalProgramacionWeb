@@ -94,7 +94,7 @@ public class CitasMedicasServices {
 		@Produces(MediaType.APPLICATION_JSON) 
 	    public Response guardarCita(CitasMedicas cita) {
 	        try {
-	            onCitas.guardarCitasMedicas(cita); // Considera cambiar el nombre del método a guardarCita()
+	            onCitas.guardarCitasMedicas(cita); 
 	            MensajeJSON response = new MensajeJSON("success", "Cita médica guardada exitosamente.");
 	            return Response.ok(response).build();
 	        } catch (Exception e) {

@@ -25,10 +25,6 @@ public class Usuario {
     private String uid;
     
    
-   // @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    //private List<CitasMedicas> citasComoPaciente;
-    
-    
     
     public int getIdUser() {
         return idUser;
